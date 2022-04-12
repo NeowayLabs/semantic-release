@@ -1,0 +1,22 @@
+os:
+  - linux
+
+sudo: required
+
+services:
+  - docker
+
+language: go
+
+go:
+  - "tip"
+  - "1.16"
+
+script:
+  - make check
+
+notifications:
+  email:
+    - data.pirates@neoway.com.br
+    - esequiel.virtuoso@neoway.com.br
+    
