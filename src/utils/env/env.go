@@ -2,7 +2,6 @@
 package env
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -32,10 +31,8 @@ func GetInt(envVar string, defaultValue int) int {
 func CheckRequired(envVarArgs ...string) {
 	for _, envVar := range envVarArgs {
 		if os.Getenv(envVar) == "" {
-			fmt.Print("1")
 			log.Fatalf("Environment variable '%s' is required.", envVar)
 		}
-		fmt.Print("2")
 		log.Printf("Environment variable '%s' is ok.", envVar)
 	}
 }

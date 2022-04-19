@@ -20,8 +20,8 @@ const (
 )
 
 var (
-	CommitChangeTypes             = []string{"build", "ci", "docs", "fix", "feat", "perf", "refactor", "style", "test", "breaking change", "skip", "skip versioning", "skip v"}
-	CommitChangeTypesMajorUpgrade = []string{"breaking change"}
+	CommitChangeTypes             = []string{"build", "ci", "docs", "fix", "feat", "perf", "refactor", "style", "test", "breaking change", "breaking changes", "skip", "skip versioning", "skip v"}
+	CommitChangeTypesMajorUpgrade = []string{"breaking change, breaking changes"}
 	CommitChangeTypesMinorUpgrade = []string{"feat"}
 	CommitChangeTypePatchUpgrade  = []string{"build", "ci", "docs", "fix", "perf", "refactor", "style", "test"}
 	CommitTypeSkipVersioning      = []string{"skip", "skip versioning", "skip v"}
@@ -39,6 +39,7 @@ func PrintCommitTypes() {
 	fmt.Println(style.Yellow + "\t*           [style]" + style.Reset + ": Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)")
 	fmt.Println(style.Yellow + "\t*            [test]" + style.Reset + ": Adding missing tests or correcting existing tests")
 	fmt.Println(style.Yellow + "\t*            [skip]" + style.Reset + ": Skip versioning")
-	fmt.Println(style.Yellow + "\t*          [skip v]" + style.Reset + ": Skip versioning")
 	fmt.Println(style.Yellow + "\t* [skip versioning]" + style.Reset + ": Skip versioning")
+	fmt.Println(style.Yellow + "\t* [breaking change]" + style.Reset + ": Change that will require other changes in dependant applications")
+	fmt.Println(style.Yellow + "\t* [breaking changes]" + style.Reset + ": Changes that will require other changes in dependant applications")
 }

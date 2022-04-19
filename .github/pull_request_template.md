@@ -4,6 +4,7 @@ Here goes your feature/bug-fix proposal
 
 ### Type of change?
 
+- [ ] [breaking change(s)]: Changes that will require other changes in dependant applications.
 - [ ] [build]: Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)
 - [ ] [ci]: Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)
 - [ ] [docs]: Documentation only changes
@@ -18,7 +19,7 @@ Note: Remove the non-checked options
 
 ## Why?
 
-Here you express the reason it is necessary (keep the _e daí?_ factor in mind)
+Here you express the reason it is necessary (keep the _so what?_ factor in mind)
 
 ## How?
 
@@ -31,12 +32,12 @@ Here you give a little more detail on the implementation or justify any unorthod
 - [ ] Benchmark tests
 
 
-# Checklist:
+# Before submitting a PR please make sure to check if:
 
-- [ ] My code follows the style guidelines of this project
+- [ ] The code follows the style guidelines of this project
 - [ ] I have performed a self-review of my own code
 - [ ] I have commented on my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
+- [ ] The changes generate no new warnings
 - [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] New and existing unit tests pass locally with my changes

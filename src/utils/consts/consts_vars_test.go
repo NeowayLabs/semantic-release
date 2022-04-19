@@ -20,8 +20,8 @@ func TestGlobalConstsAndVars(t *testing.T) {
 	assert.Equal(t, "[%s](https://%s/%s/%s/-/commit/%s)", ChangeLogCommitHashLinkFormat)
 
 	// VARS
-	assert.Equal(t, []string{"build", "ci", "docs", "fix", "feat", "perf", "refactor", "style", "test", "breaking change", "skip", "skip versioning", "skip v"}, CommitChangeTypes)
-	assert.Equal(t, []string{"breaking change"}, CommitChangeTypesMajorUpgrade)
+	assert.Equal(t, []string{"build", "ci", "docs", "fix", "feat", "perf", "refactor", "style", "test", "breaking change", "breaking changes", "skip", "skip versioning", "skip v"}, CommitChangeTypes)
+	assert.Equal(t, []string{"breaking change", "breaking changes"}, CommitChangeTypesMajorUpgrade)
 	assert.Equal(t, []string{"feat"}, CommitChangeTypesMinorUpgrade)
 	assert.Equal(t, []string{"build", "ci", "docs", "fix", "perf", "refactor", "style", "test"}, CommitChangeTypePatchUpgrade)
 	assert.Equal(t, []string{"skip", "skip versioning", "skip v"}, CommitTypeSkipVersioning)
