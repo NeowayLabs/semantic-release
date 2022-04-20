@@ -7,6 +7,13 @@ RUN apk --no-cache update && \
 RUN adduser -D -g '' appuser
 
 COPY ./cmd/semantic-release/semantic-release /app/semantic-release
+ARG SSH_INTEGRATION_SEMANTIC
+ARG GITLAB_CONTAINER_NAME
+ENV SSH_INTEGRATION_SEMANTIC=$SSH_INTEGRATION_SEMANTIC
+ENV GITLAB_CONTAINER_NAME=$GITLAB_CONTAINER_NAME
+RUN echo $SSH_INTEGRATION_SEMANTIC
+RUN echo "172.20.0.2 gitlab.integration-tests.com" >> /etc/hosts
+
 
 FROM scratch
 

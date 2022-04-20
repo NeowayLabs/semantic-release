@@ -1,0 +1,20 @@
+HTTP/2 302 
+server: nginx
+date: Fri, 22 Apr 2022 21:45:00 GMT
+content-type: text/html; charset=utf-8
+location: https://gitlab.integration-tests.com/users/sign_in
+cache-control: no-cache
+content-security-policy: 
+permissions-policy: interest-cohort=()
+pragma: no-cache
+x-content-type-options: nosniff
+x-download-options: noopen
+x-frame-options: SAMEORIGIN
+x-permitted-cross-domain-policies: none
+x-request-id: 01G19KRHGZEMXANSH3YWSF1AP4
+x-runtime: 0.016676
+x-ua-compatible: IE=edge
+x-xss-protection: 1; mode=block
+strict-transport-security: max-age=63072000
+referrer-policy: strict-origin-when-cross-origin
+

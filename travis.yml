@@ -12,8 +12,25 @@ go:
   - "tip"
   - "1.16"
 
-script:
-  - make check
+env:
+  - SSH_INTEGRATION_SEMANTIC=$SSH_INTEGRATION_SEMANTIC
+
+stages:
+  - check
+  - env
+  - restore-gitlab-backup
+  - check-integration
+
+jobs:
+  include:
+    - stage: check
+      script: make check
+    - stage: env
+      script: make env
+    - stage: restore-gitlab-backup
+      script: make restore-gitlab-backup
+    - stage: check-integration
+      script: make check-integration
 
 notifications:
   email:
