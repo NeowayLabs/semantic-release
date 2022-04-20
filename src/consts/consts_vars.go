@@ -3,7 +3,7 @@ package consts
 import (
 	"fmt"
 
-	style "github.com/NeowayLabs/semantic-release/src/utils/stdout_style"
+	style "github.com/NeowayLabs/semantic-release/src/utils/style"
 )
 
 const (

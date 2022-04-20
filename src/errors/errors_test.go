@@ -1,4 +1,4 @@
-package errorsutils
+package errors
 
 import (
 	"bytes"

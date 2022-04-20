@@ -1,4 +1,4 @@
-package errorsutils
+package errors
 
 import (
 	"fmt"
@@ -31,6 +31,12 @@ const (
 	ErrMsgGetUpgradeType                 = "error while getting upgrade type due to: %s"
 )
 
+// Error abstract the error verification, add log when error and return a boolean
+// Args:
+// 		err (error): Error to be checked.
+// 		message (string): Message to be logged when error.
+// Returns:
+// 		bool: true when error, otherwise false.
 func Error(err error, message string) bool {
 	if err != nil {
 		log.Printf(fmt.Sprintf(ErrMsgDueTo, message, err))
@@ -39,6 +45,10 @@ func Error(err error, message string) bool {
 	return false
 }
 
+// HasError aims to handle the CLI errors, logging and panic
+// Args:
+// 		err (error): Error to be checked.
+// 		message (string): Message to be logged when error.
 func HasError(err error, message string) {
 	if Error(err, message) {
 		panic(err)

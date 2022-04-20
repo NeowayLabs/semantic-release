@@ -1,4 +1,4 @@
-package stdoutstyle
+package style
 
 import (
 	"testing"
