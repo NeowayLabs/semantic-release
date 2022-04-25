@@ -1,0 +1,30 @@
+os:
+  - linux
+
+sudo: required
+
+services:
+  - docker
+
+language: go
+
+go:
+  - "tip"
+  - "1.16"
+
+env:
+  - SSH_INTEGRATION_SEMANTIC=$SSH_INTEGRATION_SEMANTIC
+
+stages:
+  - check
+
+jobs:
+  include:
+    - stage: check
+      script: make check
+
+notifications:
+  email:
+    - data.pirates@neoway.com.br
+    - esequiel.virtuoso@neoway.com.br
+    
