@@ -2,10 +2,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"log"
 	"os"
 
-	"github.com/NeowayLabs/semantic-release/cmd/handler"
-	"github.com/NeowayLabs/semantic-release/src/version"
+	"github.com/NeowayLabs/semantic-release/src/semantic"
+)
+
+var (
+	homePath = os.Getenv("HOME")
 )
 
 func main() {
@@ -27,9 +32,14 @@ func main() {
 	switch os.Args[1] {
 	case "up":
 		// TODO: Implement me!
-		versionService := version.NewService(nil, nil)
-		handlerService := handler.New(upgradeVersionCmd, gitHost, groupName, projectName, authKey, upgradePyFile, versionService)
-		handlerService.HandleSemantic()
+		// TODO: Implement me!
+		upgradeVersionCmd.Parse(os.Args[2:])
+
+		validate(upgradeVersionCmd, gitHost, groupName, projectName, authKey, upgradePyFile)
+
+		versionService := semantic.New(homePath, addFilesToUpgradeList(upgradePyFile), nil, nil, nil)
+		fmt.Println(versionService)
+		// TODO: Implement me!
 	case "help":
 		// TODO: Implement me!
 		helpCmd.PrintDefaults()
@@ -40,6 +50,46 @@ func main() {
 
 	default:
 		// TODO: Implement me!
+		os.Exit(1)
+	}
+}
+
+type upgradeFiles struct {
+	files []upgradeFile
+}
+
+type upgradeFile struct {
+	path         string
+	variableName string
+}
+
+func addFilesToUpgradeList(upgradePyFile *bool) upgradeFiles {
+	upgradeFilesList := upgradeFiles{}
+	if *upgradePyFile {
+		upgradeFilesList.files = append(upgradeFilesList.files, upgradeFile{path: homePath + "setup.py", variableName: "__version__"})
+	}
+	return upgradeFilesList
+}
+
+func validate(upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, authKey *string, upgradePyFile *bool) {
+
+	if *gitHost == "" {
+		log.Println("Oops! Git host name must be specified. [docker run neowaylabs/semantic-release up -git-host gitHostNameHere]")
+		os.Exit(1)
+	}
+
+	if *groupName == "" {
+		log.Println("Oops! Git group name must be specified. [docker run neowaylabs/semantic-release up -git-host gitHostNameHere -group gitGroupNameHere]")
+		os.Exit(1)
+	}
+
+	if *projectName == "" {
+		log.Println("Oops! Git project name must be specified. [docker run neowaylabs/semantic-release up -git-host gitHostNameHere -group gitGroupNameHere -project gitProjectNameHere]")
+		os.Exit(1)
+	}
+
+	if *authKey == "" {
+		log.Println("Oops! Auth must be specified. [docker run neowaylabs/semantic-release up -git-host gitHostNameHere -group gitGroupNameHere -project gitProjectNameHere -auth sshKeyHere]")
 		os.Exit(1)
 	}
 }
