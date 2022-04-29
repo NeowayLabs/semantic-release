@@ -16,6 +16,7 @@ type RepositoryVersionControl interface {
 
 type VersionControl interface {
 	GetNewVersion(commitMessage string, currentVersion string) (string, error)
+	MustSkipVersioning(commitMessage string) bool
 }
 
 type FilesVersionControl interface {
@@ -85,6 +86,10 @@ func (s *Semantic) GenerateNewRelease() error {
 	changesInfo, err := s.getChangesInformation()
 	if err != nil {
 		return errors.New("error while getting changes information due to: " + err.Error())
+	}
+
+	if s.versionControl.MustSkipVersioning(changesInfo.message) {
+		return nil
 	}
 
 	newVersion, err := s.versionControl.GetNewVersion(changesInfo.message, changesInfo.currentVersion)
