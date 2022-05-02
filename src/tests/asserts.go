@@ -39,3 +39,43 @@ func AssertEmpty(t *testing.T, actual interface{}) {
 		}
 	}
 }
+
+func AssertNotEmpty(t *testing.T, actual interface{}) {
+	t.Helper()
+	actualType := reflect.TypeOf(actual).Name()
+
+	switch actualType {
+	case "string":
+		if "" == actual {
+			t.Error("String value should not be empty")
+		}
+	}
+}
+
+func AssertTrue(t *testing.T, actual bool) {
+	t.Helper()
+	if !actual {
+		t.Errorf("Should be true")
+	}
+}
+
+func AssertFrue(t *testing.T, actual bool) {
+	t.Helper()
+	if actual {
+		t.Errorf("Should be false")
+	}
+}
+
+func AssertNil(t *testing.T, actual interface{}) {
+	t.Helper()
+	if actual != nil {
+		t.Errorf("Expected nil but was %v", actual)
+	}
+}
+
+func AssertNotNil(t *testing.T, actual interface{}) {
+	t.Helper()
+	if actual == nil {
+		t.Error("Expected not to be nil")
+	}
+}

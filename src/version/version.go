@@ -3,20 +3,16 @@ package version
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 )
 
 const (
-	major          = "MAJOR"
-	minor          = "MINOR"
-	patch          = "PATCH"
-	versionPattern = "%d.%d.%d"
-	yellow         = "\033[33m"
-	reset          = "\033[0m"
-
-	ErrMsgConvertToInt = "could not convert %v to int"
+	major       = "MAJOR"
+	minor       = "MINOR"
+	patch       = "PATCH"
+	colorYellow = "\033[33m"
+	colorReset  = "\033[0m"
 )
 
 var (
@@ -27,10 +23,16 @@ var (
 	commitTypeSkipVersioning      = []string{"skip", "skip versioning", "skip v"}
 )
 
-type ElapsedTime func(functionName string) func()
+type Logger interface {
+	Info(s string, args ...interface{})
+	Error(s string, args ...interface{})
+}
+
+type PrintElapsedTime func(functionName string) func()
 
 type VersionControl struct {
-	printElapsedTime ElapsedTime
+	log              Logger
+	printElapsedTime PrintElapsedTime
 }
 
 // splitVersionMajorMinorPatch get a string version, split it and return a map of int values
@@ -44,19 +46,23 @@ type VersionControl struct {
 // 		Otherwise:
 // 			error
 func (v *VersionControl) splitVersionMajorMinorPatch(version string) (map[string]int, error) {
-	versionMap := make(map[string]string)
-	resultMap := make(map[string]int)
 	splitedVersion := strings.Split(version, ".")
 
+	if len(splitedVersion) < 3 {
+		return nil, errors.New("version must follow the pattern major.minor.patch. I.e.: 1.0.0")
+	}
+
+	versionMap := make(map[string]string)
 	versionMap[major] = splitedVersion[0]
 	versionMap[minor] = splitedVersion[1]
 	versionMap[patch] = splitedVersion[2]
 
+	resultMap := make(map[string]int)
 	for key, version := range versionMap {
 		versionInt, err := strconv.Atoi(version)
 		if err != nil {
-			log.Printf(ErrMsgConvertToInt, version)
-			return nil, errors.New(fmt.Sprintf(ErrMsgConvertToInt, version))
+			v.log.Error("could not convert %v to int", version)
+			return nil, errors.New(fmt.Sprintf("could not convert %v to int", version))
 
 		}
 		resultMap[key] = versionInt
@@ -98,17 +104,18 @@ func (v *VersionControl) getUpgradeType(commitChangeType string) (string, error)
 // 		2 - If the current version is 2.1.1 and the update type is MINOR it will return 2.2.0
 // 		1 - If the current version is 2.1.1 and the update type is PATCH it will return 2.1.2
 func (v *VersionControl) upgradeVersion(upgradeType string, currentMajor, currentMinor, currentPatch int) string {
+	versionPattern := "%d.%d.%d"
 	var newVersion string
 
 	switch upgradeType {
 	case major:
-		log.Printf(yellow+"%d"+reset+".0.0", currentMajor+1)
+		v.log.Info(colorYellow+"%d"+colorReset+".0.0", currentMajor+1)
 		newVersion = fmt.Sprintf(versionPattern, currentMajor+1, 0, 0)
 	case minor:
-		log.Printf("%d."+yellow+"%d"+reset+".0", currentMajor, currentMinor+1)
+		v.log.Info("%d."+colorYellow+"%d"+colorReset+".0", currentMajor, currentMinor+1)
 		newVersion = fmt.Sprintf(versionPattern, currentMajor, currentMinor+1, 0)
 	case patch:
-		log.Printf("%d.%d."+yellow+"%d"+reset, currentMajor, currentMinor, currentPatch+1)
+		v.log.Info("%d.%d."+colorYellow+"%d"+colorReset, currentMajor, currentMinor, currentPatch+1)
 		newVersion = fmt.Sprintf(versionPattern, currentMajor, currentMinor, currentPatch+1)
 	}
 	return newVersion
@@ -120,14 +127,15 @@ func (v *VersionControl) upgradeVersion(upgradeType string, currentMajor, curren
 // 		commitMessage (string): The commit message.
 // 		currentVersion (string): Current release version. I.e.: 2.1.1.
 // Returns:
-// 		It will return a string with the new version.
-// 		I.e.:
-// 		1 - If the current version is 2.1.1 and the update type is MAJOR it will return 3.0.0
-// 		2 - If the current version is 2.1.1 and the update type is MINOR it will return 2.2.0
-// 		1 - If the current version is 2.1.1 and the update type is PATCH it will return 2.1.2
+// 		string: It will return a string with the new version.
+// 			I.e.:
+// 			1 - If the current version is 2.1.1 and the update type is MAJOR it will return 3.0.0
+// 			2 - If the current version is 2.1.1 and the update type is MINOR it will return 2.2.0
+// 			1 - If the current version is 2.1.1 and the update type is PATCH it will return 2.1.2
+// 		error: It returns an error when something wrong happen.
 func (v *VersionControl) GetNewVersion(commitMessage string, currentVersion string) (string, error) {
 	defer v.printElapsedTime("GetNewVersion")()
-	log.Printf("generating new version from %s", currentVersion)
+	v.log.Info("generating new version from %s", currentVersion)
 
 	commitChangeType, err := v.getCommitChangeTypeFromMessage(commitMessage)
 	if err != nil {
@@ -158,7 +166,7 @@ func (v *VersionControl) GetNewVersion(commitMessage string, currentVersion stri
 //       message: Commit subject here.
 // Output: fix
 func (v *VersionControl) getCommitChangeTypeFromMessage(commitMessage string) (string, error) {
-	log.Println("getting commit type from message")
+	v.log.Info("getting commit type from message")
 	splitedMessage := strings.Split(commitMessage, "\n")
 	for _, row := range splitedMessage {
 		for _, changeType := range commitChangeTypes {
@@ -201,8 +209,9 @@ func (v *VersionControl) MustSkipVersioning(commitMessage string) bool {
 }
 
 // NewVersionControl is the version control constructor
-func NewVersionControl(printElapsedTime ElapsedTime) *VersionControl {
+func NewVersionControl(log Logger, printElapsedTime PrintElapsedTime) *VersionControl {
 	return &VersionControl{
+		log:              log,
 		printElapsedTime: printElapsedTime,
 	}
 }

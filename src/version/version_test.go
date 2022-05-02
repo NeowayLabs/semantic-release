@@ -4,9 +4,11 @@
 package version_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/NeowayLabs/semantic-release/src/log"
 	"github.com/NeowayLabs/semantic-release/src/tests"
 	"github.com/NeowayLabs/semantic-release/src/version"
 )
@@ -16,7 +18,12 @@ type fixture struct {
 }
 
 func setup() *fixture {
-	return &fixture{versionControl: version.NewVersionControl(PrintElapsedTimeMock)}
+	logger, err := log.New("test", "", "info")
+	if err != nil {
+		errors.New("error while getting new log")
+	}
+
+	return &fixture{versionControl: version.NewVersionControl(logger, PrintElapsedTimeMock)}
 }
 
 func PrintElapsedTimeMock(what string) func() {
@@ -38,6 +45,14 @@ func TestGetNewVersionSplitVersionMajorMinorPatchError(t *testing.T) {
 	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[feat]", "1.0.a")
 	tests.AssertError(t, actualErr)
 	tests.AssertEqualValues(t, "error while spliting version into MAJOR.MINOR.PATCH due to: could not convert a to int", actualErr.Error())
+	tests.AssertEmpty(t, actualVersion)
+}
+
+func TestGetNewVersionSplitVersionPathernError(t *testing.T) {
+	f := setup()
+	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[feat]", "1.0")
+	tests.AssertError(t, actualErr)
+	tests.AssertEqualValues(t, "error while spliting version into MAJOR.MINOR.PATCH due to: version must follow the pattern major.minor.patch. I.e.: 1.0.0", actualErr.Error())
 	tests.AssertEmpty(t, actualVersion)
 }
 
