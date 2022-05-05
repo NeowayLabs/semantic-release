@@ -1,3 +1,6 @@
+//go:build unit
+// +build unit
+
 package semantic_test
 
 import (
@@ -62,10 +65,15 @@ func (r *RepositoryVersionControlMock) UpgradeRemoteRepository(newVersion string
 type VersionControlMock struct {
 	newVersion       string
 	errGetNewVersion error
+	mustSkip         bool
 }
 
 func (v *VersionControlMock) GetNewVersion(commitMessage string, currentVersion string) (string, error) {
 	return v.newVersion, v.errGetNewVersion
+}
+
+func (v *VersionControlMock) MustSkipVersioning(commitMessage string) bool {
+	return v.mustSkip
 }
 
 type FilesVersionControlMock struct {
@@ -174,6 +182,16 @@ func TestGenerateNewReleaseErrorGetChangeMessage(t *testing.T) {
 
 	tests.AssertEqualValues(t, "error while getting changes information due to: error getting message: test", actualErr.Error())
 	tests.AssertError(t, actualErr)
+}
+
+func TestGenerateNewReleaseMustSkip(t *testing.T) {
+	f := setup()
+	f.versionControlMock.mustSkip = true
+	f.rootPath = os.Getenv("HOME")
+	semanticService := f.NewSemantic()
+	actualErr := semanticService.GenerateNewRelease()
+
+	tests.AssertNoError(t, actualErr)
 }
 
 func TestGenerateNewReleaseErrorGetCurrentVersion(t *testing.T) {
