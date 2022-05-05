@@ -60,6 +60,9 @@ shell-git:
 log-git:
 	docker logs -f ${gitlab_container_name}
 
+git-ip:
+	docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${gitlab_container_name}
+
 inspect-git:
 	docker inspect ${gitlab_container_name}
 
@@ -68,6 +71,8 @@ create-gitlab-backup:
 
 restore-gitlab-backup:
 	./hack/gitlab-backup.sh restore ${gitlab_container_name}
+
+run-gitlab-env: env restore-gitlab-backup
 
 env-stop: ##@environment Remove gitlab container, and network.
 	GITLAB_CONTAINER_NAME=${gitlab_container_name} docker-compose kill
@@ -94,7 +99,7 @@ run-docker-local:
 check: modcache imagedev
 	$(run) go test -tags unit -timeout 20s -race -coverprofile=$(cov) ./...
 
-check-integration: image
+check-integration: run-gitlab-env image
 	./hack/check-integration.sh $(parameters)
 
 coverage: modcache check

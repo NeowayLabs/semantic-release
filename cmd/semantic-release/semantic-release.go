@@ -22,7 +22,8 @@ func main() {
 	groupName := upgradeVersionCmd.String("git-group", "", "Git group name. (required)")
 	projectName := upgradeVersionCmd.String("git-project", "", "Git project name. (required)")
 	upgradePyFile := upgradeVersionCmd.Bool("setup-py", false, "Upgrade version in setup.py file. (default false)")
-	authKey := upgradeVersionCmd.String("auth", "", "SSH key. (required)")
+	username := upgradeVersionCmd.String("username", "", "Git username. (required)")
+	password := upgradeVersionCmd.String("password", "", "Git password. (required)")
 
 	if len(os.Args) < 2 {
 		// TODO: Implement me!
@@ -35,7 +36,7 @@ func main() {
 		// TODO: Implement me!
 		upgradeVersionCmd.Parse(os.Args[2:])
 
-		validate(upgradeVersionCmd, gitHost, groupName, projectName, authKey, upgradePyFile)
+		validate(upgradeVersionCmd, gitHost, groupName, projectName, username, password, upgradePyFile)
 
 		versionService := semantic.New(homePath, addFilesToUpgradeList(upgradePyFile), nil, nil, nil)
 		fmt.Println(versionService)
@@ -71,7 +72,7 @@ func addFilesToUpgradeList(upgradePyFile *bool) upgradeFiles {
 	return upgradeFilesList
 }
 
-func validate(upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, authKey *string, upgradePyFile *bool) {
+func validate(upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, username, password *string, upgradePyFile *bool) {
 
 	if *gitHost == "" {
 		log.Println("Oops! Git host name must be specified. [docker run neowaylabs/semantic-release up -git-host gitHostNameHere]")
@@ -88,8 +89,13 @@ func validate(upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, 
 		os.Exit(1)
 	}
 
-	if *authKey == "" {
-		log.Println("Oops! Auth must be specified. [docker run neowaylabs/semantic-release up -git-host gitHostNameHere -group gitGroupNameHere -project gitProjectNameHere -auth sshKeyHere]")
+	if *username == "" {
+		log.Println("Oops! Username must be specified. [docker run neowaylabs/semantic-release up -git-host gitHostNameHere -group gitGroupNameHere -project gitProjectNameHere -username gitUsername]")
+		os.Exit(1)
+	}
+
+	if *password == "" {
+		log.Println("Oops! password must be specified. [docker run neowaylabs/semantic-release up -git-host gitHostNameHere -group gitGroupNameHere -project gitProjectNameHere -username gitUsername -password gitPassword]")
 		os.Exit(1)
 	}
 }
