@@ -28,7 +28,6 @@ type GitVersioning struct {
 	printElapsedTime     ElapsedTime
 	url                  string
 	destinationDirectory string
-	replace              bool
 	repo                 *git.Repository
 	username             string
 	password             string
