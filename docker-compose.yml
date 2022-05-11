@@ -18,7 +18,7 @@ services:
           # the default root username is 'root'
           # Add any other gitlab.rb configuration here, each on its own line
       ports:
-        - '80:80'
+        - '80'
         - '443:443'
-        - '2224:22'
+        - '22'
       shm_size: '256m'

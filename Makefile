@@ -51,10 +51,14 @@ publish: image
 build: modcache imagedev
 	$(runbuild) go build -v -ldflags "-w -s -X main.Version=$(version)" -o $(run_local) ./cmd/semantic-release
 
-env: ##@environment Create network and run gitlab container.
+env: ##@environment Create gitlab container.
 	GITLAB_CONTAINER_NAME=${gitlab_container_name} docker-compose up --build -d gitlab
 
-shell-git:
+env-stop: ##@environment Remove docker compose conmtainers.
+	docker-compose kill
+	docker-compose rm -v -f
+
+gitlab-shell:
 	docker exec -it ${gitlab_container_name} /bin/bash
 
 gitlab-log:
@@ -63,7 +67,7 @@ gitlab-log:
 gitlab-ip:
 	docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${gitlab_container_name}
 
-inspect-git:
+gitlab-inspect:
 	docker inspect ${gitlab_container_name}
 
 gitlab-backup:
@@ -73,10 +77,6 @@ gitlab-restore:
 	cd hack && ./gitlab-backup.sh restore ${gitlab_container_name}
 
 start-gitlab-env: env gitlab-restore
-
-env-stop: ##@environment Remove gitlab container, and network.
-	docker-compose kill
-	docker-compose rm -v -f
 
 clean-go-build:
 	./hack/clean-go-build.sh
@@ -97,7 +97,7 @@ check: modcache imagedev
 	$(run) go test -tags unit -timeout 20s -race -coverprofile=$(cov) ./...
 
 check-integration: imagedev start-gitlab-env
-	docker compose run --entrypoint "./hack/check-integration.sh" --no-deps semantic-release
+	$(runcompose) --entrypoint "./hack/check-integration.sh" --no-deps semantic-release
 
 coverage: modcache check
 	$(run) go tool cover -html=$(cov) -o=$(covhtml)
