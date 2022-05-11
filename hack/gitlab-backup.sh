@@ -23,15 +23,19 @@ function run_command() {
             else
                 echo -ne "\nRestoring gitlab backup with pre-configured repository test...\n"
                 sleep 240
-                docker exec -it $GITLAB_CONTAINER gitlab-ctl stop puma force=yes
-                docker exec -it $GITLAB_CONTAINER gitlab-ctl stop sidekiq force=yes
+                echo -ne "\nstop gitlab puma service"
+                docker exec -t $GITLAB_CONTAINER gitlab-ctl stop puma force=yes
+                echo -ne "\nstop gitlab sidekiq service"
+                docker exec -t $GITLAB_CONTAINER gitlab-ctl stop sidekiq force=yes
+                echo -ne "\ncopy backup to gitlab container"
                 docker cp ../srv/gitlab/backups/$BACKUP_FILE $GITLAB_CONTAINER:/var/opt/gitlab/backups/$BACKUP_FILE
-                docker exec -it $GITLAB_CONTAINER gitlab-backup restore BACKUP=1650232071_2022_04_17_14.9.2-ee force=yes
+                echo -ne "\nrestore gitlab backup"
+                docker exec -t $GITLAB_CONTAINER gitlab-backup restore BACKUP=1650232071_2022_04_17_14.9.2-ee force=yes
                 echo -ne "\nRestarting gitlab container..."
                 docker restart $GITLAB_CONTAINER
                 # docker exec -it  $GITLAB_CONTAINER gitlab-rake gitlab:check SANITIZE=true
                 SUCCESS=1
-                sleep 60
+                sleep 120
             fi
         fi
     else

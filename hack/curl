@@ -1,0 +1,21 @@
+HTTP/2 302 
+server: nginx
+date: Wed, 11 May 2022 02:23:03 GMT
+content-type: text/html; charset=utf-8
+location: https://localhost/users/sign_in
+cache-control: no-cache
+content-security-policy: 
+permissions-policy: interest-cohort=()
+pragma: no-cache
+set-cookie: experimentation_subject_id=eyJfcmFpbHMiOnsibWVzc2FnZSI6IklqVTFaR1UyWkdZNUxXUmhOVE10TkRSaE55MDVOalpsTFdGbVkySTVPV1EwTXpkaU55ST0iLCJleHAiOm51bGwsInB1ciI6ImNvb2tpZS5leHBlcmltZW50YXRpb25fc3ViamVjdF9pZCJ9fQ%3D%3D--5d5a9ca0b8f2a13e133a96989835543b88cdd0d0; path=/; expires=Sun, 11 May 2042 02:23:03 GMT; secure; HttpOnly; SameSite=None
+x-content-type-options: nosniff
+x-download-options: noopen
+x-frame-options: SAMEORIGIN
+x-permitted-cross-domain-policies: none
+x-request-id: 01G2RETJFYYG47Z124GTF04KCF
+x-runtime: 0.081318
+x-ua-compatible: IE=edge
+x-xss-protection: 1; mode=block
+strict-transport-security: max-age=63072000
+referrer-policy: strict-origin-when-cross-origin
+

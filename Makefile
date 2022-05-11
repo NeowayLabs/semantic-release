@@ -96,9 +96,8 @@ run-help-cmt:
 check: modcache imagedev
 	$(run) go test -tags unit -timeout 20s -race -coverprofile=$(cov) ./...
 
-check-integration: imagedev #start-gitlab-env docker compose run --entrypoint "./hack/check-integration.sh" --no-deps semantic-release
-	ls
-	docker ps
+check-integration: imagedev start-gitlab-env
+	docker compose run --entrypoint "./hack/check-integration.sh" --no-deps semantic-release
 
 coverage: modcache check
 	$(run) go tool cover -html=$(cov) -o=$(covhtml)
