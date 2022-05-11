@@ -41,7 +41,7 @@ semantic-release:
         refs:
             - master
     script:
-        - docker run registry.com/group/semantic-release up -git-host $CI_SERVER_HOST -git-group gitGroupNameHere -git-project $CI_PROJECT_NAME -auth sshKeyHere
+        - docker run registry.com/group/semantic-release up -git-host $CI_SERVER_HOST -git-group gitGroupNameHere -git-project $CI_PROJECT_NAME -username gitUsername -password gitPassword
 ```
 
 If your project is a Python project you can add the flag `-setup-py true` to update the release version in this file too.
@@ -102,18 +102,6 @@ message: Added new function to print the Fibonacci sequece.
 - type: [skip]
 - type: [skip v]
 - type: [skip versioning]
-
-
-## Environment Variables
-
-Before running the integration tests you must set up the bellow environment variable with the SSH PRIVATE KEY.
-
-```
-SSH_INTEGRATION_SEMANTIC
-```
-
-You can find it on the CI engine such as, travis ci or github actions.
-
 
 ## Testing
 

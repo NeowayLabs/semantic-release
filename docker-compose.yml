@@ -1,24 +1,24 @@
-version: '3.6'
+version: "3.6"
 services:
-  web:
-    image: 'gitlab/gitlab-ee:14.9.2-ee.0'
-    container_name: ${GITLAB_CONTAINER_NAME}
-    restart: always
-    hostname: 'gitlab.example.com'
-    environment:
-      GITLAB_OMNIBUS_CONFIG: |
-        external_url 'https://gitlab.integration-tests.com';        
-        gitlab_rails['initial_root_password'] = "password";   
-        # the default root username is 'root'
-        # Add any other gitlab.rb configuration here, each on its own line
-        # gitlab_integration_api_token = 5vVMwVMyaAczkZJ8p5Dy xFRU9ESfK3Bc1uDcameR
-    ports:
-      - '80:80'
-      - '443:443'
-      - '22:22'
-    # volumes:
-      # - /srv/gitlab/config:/etc/gitlab
-      # - /srv/gitlab/logs:/var/log/gitlab
-      # - /srv/gitlab/data:/var/opt/gitlab
-      # - /srv/gitlab/backups:/var/opt/gitlab/backups
-    shm_size: '256m'
+  semantic-release:
+    image: neowaylabs/semantic-releasedev:latest
+    container_name: semantic-release
+    links:
+     - gitlab
+
+  gitlab:
+      image: 'gitlab/gitlab-ee:14.9.2-ee.0'
+      container_name: ${GITLAB_CONTAINER_NAME}
+      restart: always
+      hostname: 'gitlab'
+      environment:
+        GITLAB_OMNIBUS_CONFIG: |
+          external_url 'https://gitlab.com';        
+          gitlab_rails['initial_root_password'] = "password";   
+          # the default root username is 'root'
+          # Add any other gitlab.rb configuration here, each on its own line
+      ports:
+        - '80'
+        - '443:443'
+        - '22'
+      shm_size: '256m'

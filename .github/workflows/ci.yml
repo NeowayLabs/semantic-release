@@ -14,7 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
+      
       - name: Run Unit Tests
         run: |
-          export SSH_INTEGRATION_SEMANTIC="${{secrets.SSH_INTEGRATION_SEMANTIC}}"
           make check
+  check-integration:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+      - name: Run Integration Tests
+        run: |
+          make check-integration
