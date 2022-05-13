@@ -99,3 +99,14 @@ func TestMustSkipVersioningTrue(t *testing.T) {
 	actualMustSkip = f.versionControl.MustSkipVersioning("type: [skip]")
 	tests.AssertEqualValues(t, true, actualMustSkip)
 }
+
+func TestGetNewVersionFirstVersionSuccess(t *testing.T) {
+	f := setup()
+	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[fix]", "0.0.0")
+	tests.AssertNoError(t, actualErr)
+	tests.AssertEqualValues(t, "1.0.0", actualVersion)
+
+	actualVersion, actualErr = f.versionControl.GetNewVersion("type:[feat]", "0.0.0")
+	tests.AssertNoError(t, actualErr)
+	tests.AssertEqualValues(t, "1.0.0", actualVersion)
+}

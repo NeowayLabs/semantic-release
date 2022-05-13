@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"testing"
 
 	"github.com/NeowayLabs/semantic-release/src/git"
 	"github.com/NeowayLabs/semantic-release/src/log"
@@ -45,39 +46,44 @@ func getValidSetup() *fixture {
 	return f
 }
 
-func newValidVersion(currentVersion string) (string, error) {
+func newValidVersion(t *testing.T, currentVersion string) string {
 	splitedVersion := strings.Split(currentVersion, ".")
-	fmt.Println(splitedVersion)
 	var newVersionSlice []int
 	for _, version := range splitedVersion {
 		versionInt, err := strconv.Atoi(version)
 		if err != nil {
-			return "", fmt.Errorf("could not convert %v to int", version)
+			t.Errorf("could not convert %v to int", version)
+			return ""
 		}
 		newVersionSlice = append(newVersionSlice, versionInt)
 	}
 
 	newVersionSlice[0] = newVersionSlice[0] + 1
-	return fmt.Sprintf("%v.%v.%v", newVersionSlice[0], newVersionSlice[1], newVersionSlice[2]), nil
+	return fmt.Sprintf("%v.%v.%v", newVersionSlice[0], newVersionSlice[1], newVersionSlice[2])
 }
 
-func (f *fixture) cleanLocalRepo() error {
+func (f *fixture) isDangerousOsOperation() bool {
 	if strings.ReplaceAll(strings.ReplaceAll(f.gitLabVersioning.destinationDirectory, "/", ""), " ", "") == strings.ReplaceAll(strings.ReplaceAll(os.Getenv("HOME"), "/", ""), " ", "") {
-		return fmt.Errorf("error while cleaning up local repository path %s due to: too danger os operation", f.gitLabVersioning.destinationDirectory)
+		return true
+	}
+	return false
+}
+
+func (f *fixture) cleanLocalRepo(t *testing.T) {
+	if f.isDangerousOsOperation() {
+		t.Errorf("error while cleaning up local repository path %s due to: too danger os operation", f.gitLabVersioning.destinationDirectory)
 	}
 
 	if _, err := os.Stat(f.gitLabVersioning.destinationDirectory); os.IsNotExist(err) {
-		return nil
+		t.Errorf("error while cleaning removing repository path %s due to: %s", f.gitLabVersioning.destinationDirectory, err.Error())
 	}
 
 	err := os.RemoveAll(f.gitLabVersioning.destinationDirectory)
 	if err != nil {
-		return err
+		t.Errorf("error while cleaning removing repository path %s due to: %s", f.gitLabVersioning.destinationDirectory, err.Error())
 	}
-
-	return nil
 }
 
-func (f *fixture) NewGitService() (*git.GitVersioning, error) {
+func (f *fixture) newGitService() (*git.GitVersioning, error) {
 	return git.New(f.log, printElapsedTimeMock, f.gitLabVersioning.url, f.gitLabVersioning.username, f.gitLabVersioning.password, f.gitLabVersioning.destinationDirectory)
 }
