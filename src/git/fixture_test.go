@@ -9,6 +9,12 @@ import (
 
 	"github.com/NeowayLabs/semantic-release/src/git"
 	"github.com/NeowayLabs/semantic-release/src/log"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+)
+
+var (
+	host = "gitlab"
 )
 
 type GitLabVersioningMock struct {
@@ -16,6 +22,70 @@ type GitLabVersioningMock struct {
 	destinationDirectory string
 	username             string
 	password             string
+}
+
+type GitMock struct {
+	branchHead                *plumbing.Reference
+	errGetBranchPointedToHead error
+	commitHistory             []*object.Commit
+	errGetCommitHistory       error
+	mostRecentCommit          git.CommitInfo
+	errGetMostRecentCommit    error
+	allTags                   []object.Tag
+	errGetAllTags             error
+	mostRecentTag             string
+	errGetMostRecentTag       error
+	errAddToStage             error
+	errCommitChanges          error
+	errPush                   error
+	doesTagExists             bool
+	errTagExists              error
+	errSetTag                 error
+	errPushTag                error
+}
+
+func (g *GitMock) GetBranchPointedToHead() (*plumbing.Reference, error) {
+	return g.branchHead, g.errGetBranchPointedToHead
+}
+
+func (g *GitMock) GetCommitHistory() ([]*object.Commit, error) {
+	return g.commitHistory, g.errGetCommitHistory
+}
+
+func (g *GitMock) GetMostRecentCommit() (git.CommitInfo, error) {
+	return g.mostRecentCommit, g.errGetMostRecentCommit
+}
+
+func (g *GitMock) GetAllTags() ([]object.Tag, error) {
+	return g.allTags, g.errGetAllTags
+}
+
+func (g *GitMock) GetMostRecentTag() (string, error) {
+	return g.mostRecentTag, g.errGetMostRecentTag
+}
+
+func (g *GitMock) AddToStage() error {
+	return g.errAddToStage
+}
+
+func (g *GitMock) CommitChanges(newReleaseVersion string) error {
+	return g.errCommitChanges
+}
+
+func (g *GitMock) Push() error {
+	return g.errPush
+}
+
+func (g *GitMock) TagExists(tag string) (bool, error) {
+	return g.doesTagExists, g.errTagExists
+}
+
+func (g *GitMock) SetTag(tag string) error {
+	return g.errSetTag
+}
+
+func (g *GitMock) PushTags() error {
+	return g.errPushTag
 }
 
 func printElapsedTimeMock(functionName string) func() {
@@ -27,6 +97,7 @@ func printElapsedTimeMock(functionName string) func() {
 type fixture struct {
 	gitLabVersioning *GitLabVersioningMock
 	log              *log.Log
+	gitFunctions     *GitMock
 }
 
 func setup() *fixture {
@@ -34,12 +105,12 @@ func setup() *fixture {
 	if err != nil {
 		panic(err.Error())
 	}
-	return &fixture{log: logger, gitLabVersioning: &GitLabVersioningMock{}}
+	return &fixture{log: logger, gitLabVersioning: &GitLabVersioningMock{}, gitFunctions: &GitMock{}}
 }
 
 func getValidSetup() *fixture {
 	f := setup()
-	f.gitLabVersioning.url = "https://gitlab/dataplatform/integration-tests.git"
+	f.gitLabVersioning.url = fmt.Sprintf("https://%s/dataplatform/integration-tests.git", host)
 	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "integration-tests")
 	f.gitLabVersioning.username = "root"
 	f.gitLabVersioning.password = "password"
@@ -85,5 +156,5 @@ func (f *fixture) cleanLocalRepo(t *testing.T) {
 }
 
 func (f *fixture) newGitService() (*git.GitVersioning, error) {
-	return git.New(f.log, printElapsedTimeMock, f.gitLabVersioning.url, f.gitLabVersioning.username, f.gitLabVersioning.password, f.gitLabVersioning.destinationDirectory)
+	return git.NewMock(f.log, printElapsedTimeMock, f.gitLabVersioning.url, f.gitLabVersioning.username, f.gitLabVersioning.password, f.gitLabVersioning.destinationDirectory, f.gitFunctions)
 }

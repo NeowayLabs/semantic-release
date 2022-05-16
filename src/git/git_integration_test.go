@@ -4,6 +4,7 @@
 package git_test
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -14,10 +15,10 @@ import (
 var (
 	// These projects have been set previously with a backup which was restored with gitlab after docker compose up.
 	// Learn more at `make start-gitlab-env` on the Makefile
-	noBranchProject        = "https://gitlab/dataplatform/no-branch-project.git"
-	noTagsProject          = "https://gitlab/dataplatform/no-tags-project.git"
-	protectedBranchProject = "https://gitlab/dataplatform/protected-branch-project.git"
-	protectedTagProject    = "https://gitlab/dataplatform/protected-tag-project.git"
+	noBranchProject        = fmt.Sprintf("https://%s/dataplatform/no-branch-project.git", host)
+	noTagsProject          = fmt.Sprintf("https://%s/dataplatform/no-tags-project.git", host)
+	protectedBranchProject = fmt.Sprintf("https://%s/dataplatform/protected-branch-project.git", host)
+	protectedTagProject    = fmt.Sprintf("https://%s/dataplatform/protected-tag-project.git", host)
 )
 
 func TestNewGitNoError(t *testing.T) {
@@ -25,6 +26,17 @@ func TestNewGitNoError(t *testing.T) {
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
 	tests.AssertNotNil(t, repo)
+	f.cleanLocalRepo(t)
+}
+
+func TestNewGitRepositoryAlreadyClonedNoError(t *testing.T) {
+	f := getValidSetup()
+	repo, err := f.newGitService()
+	tests.AssertNoError(t, err)
+	tests.AssertNotNil(t, repo)
+
+	_, err = f.newGitService()
+	tests.AssertNoError(t, err)
 	f.cleanLocalRepo(t)
 }
 
@@ -52,7 +64,6 @@ func TestNewGitCommitGetChangeHashNoError(t *testing.T) {
 	f := getValidSetup()
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
-	tests.AssertNotNil(t, repo)
 
 	hash := repo.GetChangeHash()
 	tests.AssertEqualValues(t, "a0d3d73a658e905428022c7eca03980569acce5e", hash)
@@ -63,7 +74,6 @@ func TestNewGitCommitGetChangeAuthorNameNoError(t *testing.T) {
 	f := getValidSetup()
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
-	tests.AssertNotNil(t, repo)
 
 	authorName := repo.GetChangeAuthorName()
 	tests.AssertEqualValues(t, "Administrator", authorName)
@@ -74,7 +84,6 @@ func TestNewGitCommitGetChangeAuthorEmailNoError(t *testing.T) {
 	f := getValidSetup()
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
-	tests.AssertNotNil(t, repo)
 
 	authorEmail := repo.GetChangeAuthorEmail()
 	tests.AssertEqualValues(t, "admin@example.com", authorEmail)
@@ -85,7 +94,6 @@ func TestNewGitCommitGetChangeMessageNoError(t *testing.T) {
 	f := getValidSetup()
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
-	tests.AssertNotNil(t, repo)
 
 	message := repo.GetChangeMessage()
 	tests.AssertEqualValues(t, "type: [feat]\r\nmessage: Added requirements.txt file.", message)
@@ -96,10 +104,109 @@ func TestNewGitCommitGetCurrentVersionNoError(t *testing.T) {
 	f := getValidSetup()
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
-	tests.AssertNotNil(t, repo)
 
 	currentVersion := repo.GetCurrentVersion()
 	tests.AssertEqualValues(t, "1.0.0", currentVersion)
+	f.cleanLocalRepo(t)
+}
+
+func TestNewGitUpgradeRemoteRepositoryAddChangesError(t *testing.T) {
+	f := getValidSetup()
+	f.gitLabVersioning.url = noTagsProject
+	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
+	f.gitFunctions.errAddToStage = errors.New("no changes to add")
+	repo, err := f.newGitService()
+	tests.AssertNoError(t, err)
+
+	currentVersion := repo.GetCurrentVersion()
+
+	newVersion := newValidVersion(t, currentVersion)
+	tests.AssertNotEmpty(t, newVersion)
+
+	// push the tag once
+	err = repo.UpgradeRemoteRepository(newVersion)
+	tests.AssertError(t, err)
+	tests.AssertEqualValues(t, "error during commit operation due to: no changes to add", err.Error())
+	f.cleanLocalRepo(t)
+}
+
+func TestNewGitUpgradeRemoteRepositoryCommitChangesError(t *testing.T) {
+	f := getValidSetup()
+	f.gitLabVersioning.url = noTagsProject
+	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
+	f.gitFunctions.errCommitChanges = errors.New("commit is old dated")
+	repo, err := f.newGitService()
+	tests.AssertNoError(t, err)
+
+	currentVersion := repo.GetCurrentVersion()
+
+	newVersion := newValidVersion(t, currentVersion)
+	tests.AssertNotEmpty(t, newVersion)
+
+	// push the tag once
+	err = repo.UpgradeRemoteRepository(newVersion)
+	tests.AssertError(t, err)
+	tests.AssertEqualValues(t, "error during commit operation due to: commit is old dated", err.Error())
+	f.cleanLocalRepo(t)
+}
+
+func TestNewGitUpgradeRemoteRepositoryPushError(t *testing.T) {
+	f := getValidSetup()
+	f.gitLabVersioning.url = noTagsProject
+	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
+	f.gitFunctions.errPush = errors.New("nothing to push")
+	repo, err := f.newGitService()
+	tests.AssertNoError(t, err)
+
+	currentVersion := repo.GetCurrentVersion()
+
+	newVersion := newValidVersion(t, currentVersion)
+	tests.AssertNotEmpty(t, newVersion)
+
+	// push the tag once
+	err = repo.UpgradeRemoteRepository(newVersion)
+	tests.AssertError(t, err)
+	tests.AssertEqualValues(t, "error during push operation due to: nothing to push", err.Error())
+	f.cleanLocalRepo(t)
+}
+
+func TestNewGitUpgradeRemoteRepositorySetTagError(t *testing.T) {
+	f := getValidSetup()
+	f.gitLabVersioning.url = noTagsProject
+	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
+	f.gitFunctions.errSetTag = errors.New("unable to set new tag")
+	repo, err := f.newGitService()
+	tests.AssertNoError(t, err)
+
+	currentVersion := repo.GetCurrentVersion()
+
+	newVersion := newValidVersion(t, currentVersion)
+	tests.AssertNotEmpty(t, newVersion)
+
+	// push the tag once
+	err = repo.UpgradeRemoteRepository(newVersion)
+	tests.AssertError(t, err)
+	tests.AssertEqualValues(t, "error during set tag operation due to: unable to set new tag", err.Error())
+	f.cleanLocalRepo(t)
+}
+
+func TestNewGitUpgradeRemoteRepositoryPushTagsError(t *testing.T) {
+	f := getValidSetup()
+	f.gitLabVersioning.url = noTagsProject
+	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
+	f.gitFunctions.errPushTag = errors.New("unable to push tags to remote repository")
+	repo, err := f.newGitService()
+	tests.AssertNoError(t, err)
+
+	currentVersion := repo.GetCurrentVersion()
+
+	newVersion := newValidVersion(t, currentVersion)
+	tests.AssertNotEmpty(t, newVersion)
+
+	// push the tag once
+	err = repo.UpgradeRemoteRepository(newVersion)
+	tests.AssertError(t, err)
+	tests.AssertEqualValues(t, "error during push tags operation due to: unable to push tags to remote repository", err.Error())
 	f.cleanLocalRepo(t)
 }
 
@@ -109,7 +216,6 @@ func TestNewGitUpgradeRemoteRepositoryNoError(t *testing.T) {
 	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
-	tests.AssertNotNil(t, repo)
 
 	currentVersion := repo.GetCurrentVersion()
 
@@ -123,7 +229,6 @@ func TestNewGitUpgradeRemoteRepositoryNoError(t *testing.T) {
 
 	repo, err = f.newGitService()
 	tests.AssertNoError(t, err)
-	tests.AssertNotNil(t, repo)
 
 	currentVersion = repo.GetCurrentVersion()
 	tests.AssertEqualValues(t, newVersion, currentVersion)
@@ -136,11 +241,10 @@ func TestNewGitUpgradeRemoteRepositoryProtectedTagError(t *testing.T) {
 	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "protected-tag-project")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
-	tests.AssertNotNil(t, repo)
 
 	err = repo.UpgradeRemoteRepository("0.1.0")
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "error while pushing tag to remote branch due to: command error on refs/tags/1.0.0: pre-receive hook declined", err.Error())
+	tests.AssertEqualValues(t, "error during push tags operation due to: command error on refs/tags/1.0.0: pre-receive hook declined", err.Error())
 	f.cleanLocalRepo(t)
 }
 
@@ -150,7 +254,6 @@ func TestNewGitUpgradeRemoteRepositoryAlreadyPushedTagError(t *testing.T) {
 	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
-	tests.AssertNotNil(t, repo)
 
 	currentVersion := repo.GetCurrentVersion()
 
@@ -164,7 +267,7 @@ func TestNewGitUpgradeRemoteRepositoryAlreadyPushedTagError(t *testing.T) {
 	// push the same tag again
 	err = repo.UpgradeRemoteRepository(newVersion)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "error while pushing tag to remote branch due to: already up-to-date", err.Error())
+	tests.AssertEqualValues(t, "error during push tags operation due to: already up-to-date", err.Error())
 	f.cleanLocalRepo(t)
 }
 
@@ -174,7 +277,6 @@ func TestNewGitUpgradeRemoteRepositoryPushToProtectedBranchError(t *testing.T) {
 	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "protected-branch-project")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
-	tests.AssertNotNil(t, repo)
 
 	currentVersion := repo.GetCurrentVersion()
 
@@ -183,6 +285,6 @@ func TestNewGitUpgradeRemoteRepositoryPushToProtectedBranchError(t *testing.T) {
 
 	err = repo.UpgradeRemoteRepository(newVersion)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "error while pushing commits to remote repository due to: command error on refs/heads/main: pre-receive hook declined", err.Error())
+	tests.AssertEqualValues(t, "error during push operation due to: command error on refs/heads/main: pre-receive hook declined", err.Error())
 	f.cleanLocalRepo(t)
 }

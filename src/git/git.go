@@ -28,28 +28,43 @@ type Logger interface {
 	Warn(s string, args ...interface{})
 }
 
+type GitMethods struct {
+	getBranchPointedToHead func() (*plumbing.Reference, error)
+	getCommitHistory       func() ([]*object.Commit, error)
+	getMostRecentCommit    func() (CommitInfo, error)
+	getAllTags             func() ([]object.Tag, error)
+	getMostRecentTag       func() (string, error)
+	addToStage             func() error
+	commitChanges          func(newReleaseVersion string) error
+	push                   func() error
+	tagExists              func(tag string) (bool, error)
+	setTag                 func(tag string) error
+	pushTags               func() error
+}
+
 type ElapsedTime func(functionName string) func()
 
 type GitVersioning struct {
+	git                  GitMethods
 	log                  Logger
 	printElapsedTime     ElapsedTime
 	url                  string
 	destinationDirectory string
-	repo                 *git.Repository
 	username             string
 	password             string
+	repo                 *git.Repository
 	branchHead           *plumbing.Reference
 	commitHistory        []*object.Commit
-	mostRecentCommit     commitInfo
 	tagsList             []object.Tag
+	mostRecentCommit     CommitInfo
 	mostRecentTag        string
 }
 
-type commitInfo struct {
-	hash        string
-	authorName  string
-	authorEmail string
-	message     string
+type CommitInfo struct {
+	Hash        string
+	AuthorName  string
+	AuthorEmail string
+	Message     string
 }
 
 func (g *GitVersioning) validate() error {
@@ -73,19 +88,19 @@ func (g *GitVersioning) validate() error {
 }
 
 func (g *GitVersioning) GetChangeHash() string {
-	return g.mostRecentCommit.hash
+	return g.mostRecentCommit.Hash
 }
 
 func (g *GitVersioning) GetChangeAuthorName() string {
-	return g.mostRecentCommit.authorName
+	return g.mostRecentCommit.AuthorName
 }
 
 func (g *GitVersioning) GetChangeAuthorEmail() string {
-	return g.mostRecentCommit.authorEmail
+	return g.mostRecentCommit.AuthorEmail
 }
 
 func (g *GitVersioning) GetChangeMessage() string {
-	return g.mostRecentCommit.message
+	return g.mostRecentCommit.Message
 }
 
 func (g *GitVersioning) GetCurrentVersion() string {
@@ -98,44 +113,42 @@ func (g *GitVersioning) UpgradeRemoteRepository(newVersion string) error {
 		newVersion = "1.0.0"
 	}
 
-	if err := g.commitChanges(newVersion); err != nil {
-		return err
+	if err := g.git.commitChanges(newVersion); err != nil {
+		return fmt.Errorf("error during commit operation due to: %w", err)
 	}
 
-	if err := g.push(); err != nil {
-		return err
+	if err := g.git.push(); err != nil {
+		return fmt.Errorf("error during push operation due to: %w", err)
 	}
 
-	if err := g.setTag(newVersion); err != nil {
-		return err
+	if err := g.git.setTag(newVersion); err != nil {
+		return fmt.Errorf("error during set tag operation due to: %w", err)
 	}
 
-	if err := g.pushTags(); err != nil {
-		return err
+	if err := g.git.pushTags(); err != nil {
+		return fmt.Errorf("error during push tags operation due to: %w", err)
 	}
 
 	return nil
 }
 
-func (g *GitVersioning) getBranchPointedToHead() error {
+func (g *GitVersioning) getBranchPointedToHead() (*plumbing.Reference, error) {
 	defer g.printElapsedTime("GetBranchPointedToHead")()
 	g.log.Info("getting branch pointed to HEAD")
 	ref, err := g.repo.Head()
 	if err != nil {
-		return fmt.Errorf("error while retrieving the branch pointed to HEAD due to: %w", err)
+		return nil, err
 	}
 
-	g.branchHead = ref
-
-	return nil
+	return ref, nil
 }
 
-func (g *GitVersioning) getCommitHistory() error {
+func (g *GitVersioning) getCommitHistory() ([]*object.Commit, error) {
 	defer g.printElapsedTime("GetComitHistory")()
 	g.log.Info("getting commit history")
 	cIter, err := g.repo.Log(&git.LogOptions{From: g.branchHead.Hash(), Order: git.LogOrderCommitterTime})
 	if err != nil {
-		return fmt.Errorf("error while retrieving the commit history  due to: %w", err)
+		return nil, err
 	}
 
 	var commits []*object.Commit
@@ -144,18 +157,16 @@ func (g *GitVersioning) getCommitHistory() error {
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("error while iterating over the commits due to: %w", err)
+		return nil, err
 	}
 
-	g.commitHistory = commits
-
-	return nil
+	return commits, nil
 }
 
-func (g *GitVersioning) getMostRecentCommit() error {
+func (g *GitVersioning) getMostRecentCommit() (CommitInfo, error) {
 
 	if len(g.commitHistory) == 0 {
-		return fmt.Errorf("no commits found")
+		return CommitInfo{}, fmt.Errorf("no commits found")
 	}
 
 	recentCommit := g.commitHistory[0]
@@ -166,26 +177,25 @@ func (g *GitVersioning) getMostRecentCommit() error {
 			}
 		}
 	}
-	fmt.Println("HI")
-	fmt.Println(recentCommit)
-	fmt.Println(recentCommit.Hash.String())
-	g.mostRecentCommit = commitInfo{
-		hash:        recentCommit.Hash.String(),
-		authorName:  recentCommit.Author.Name,
-		authorEmail: recentCommit.Author.Email,
-		message:     recentCommit.Message,
+
+	result := CommitInfo{
+		Hash:        recentCommit.Hash.String(),
+		AuthorName:  recentCommit.Author.Name,
+		AuthorEmail: recentCommit.Author.Email,
+		Message:     recentCommit.Message,
 	}
-	return nil
+
+	return result, nil
 }
 
-func (g *GitVersioning) getAllTags() error {
+func (g *GitVersioning) getAllTags() ([]object.Tag, error) {
 	defer g.printElapsedTime("getAllTags")()
 	g.log.Info("getting all tags from repository")
 
 	tagsIter, err := g.repo.Tags()
-	errMessage := "error while retrieving tags from repository due to: %w"
+
 	if err != nil {
-		return fmt.Errorf(errMessage, err)
+		return nil, err
 	}
 
 	var tags []object.Tag
@@ -195,26 +205,20 @@ func (g *GitVersioning) getAllTags() error {
 			Name: ref.Name().String(),
 		})
 
-		if len(tags) == 0 {
-			return fmt.Errorf(errMessage, "no tags found.")
-		}
 		return nil
 	}); err != nil {
-		return fmt.Errorf(errMessage, err)
+		return nil, err
 	}
 
-	g.tagsList = tags
-
-	return nil
+	return tags, nil
 }
 
-func (g *GitVersioning) getMostRecentTag() error {
+func (g *GitVersioning) getMostRecentTag() (string, error) {
 	defer g.printElapsedTime("GetMostRecentTag")()
 	g.log.Info("getting most recent tag from repository")
 
 	if len(g.tagsList) == 0 {
-		g.mostRecentTag = "0.0.0"
-		return nil
+		return "0.0.0", nil
 	}
 
 	mapTags := make(map[int]string)
@@ -225,20 +229,21 @@ func (g *GitVersioning) getMostRecentTag() error {
 		tagOnlyNumbers := strings.ReplaceAll(tag, ".", "")
 		tagInt, err := strconv.Atoi(tagOnlyNumbers)
 		if err != nil {
-			return fmt.Errorf("error while getting most recent tage due to: could not convert %v to int", tagOnlyNumbers)
+			return "", fmt.Errorf("could not convert %v to int", tagOnlyNumbers)
 		}
 		mapTags[tagInt] = tag
 	}
 
+	result := ""
 	previous := 0
 	for key, element := range mapTags {
 		if key > previous {
 			previous = key
-			g.mostRecentTag = element
+			result = element
 		}
 	}
 
-	return nil
+	return result, nil
 }
 
 func (g *GitVersioning) addToStage() error {
@@ -256,7 +261,7 @@ func (g *GitVersioning) addToStage() error {
 }
 
 func (g *GitVersioning) commitChanges(newReleaseVersion string) error {
-	if err := g.addToStage(); err != nil {
+	if err := g.git.addToStage(); err != nil {
 		return err
 	}
 
@@ -265,7 +270,7 @@ func (g *GitVersioning) commitChanges(newReleaseVersion string) error {
 		return err
 	}
 
-	signature := &object.Signature{Name: g.mostRecentCommit.authorName, Email: g.mostRecentCommit.authorEmail, When: time.Now()}
+	signature := &object.Signature{Name: g.mostRecentCommit.AuthorName, Email: g.mostRecentCommit.AuthorEmail, When: time.Now()}
 
 	message := fmt.Sprintf("type: [skip]: message: Commit automatically generated by Semantic Release. The new tag is %s", newReleaseVersion)
 	commit, err := worktree.Commit(message, &git.CommitOptions{Author: signature, Committer: signature})
@@ -285,7 +290,7 @@ func (g *GitVersioning) push() error {
 		},
 		InsecureSkipTLS: true})
 	if err != nil {
-		return fmt.Errorf("error while pushing commits to remote repository due to: %w", err)
+		return err
 	}
 
 	return nil
@@ -313,7 +318,7 @@ func (g *GitVersioning) tagExists(tag string) (bool, error) {
 
 func (g *GitVersioning) setTag(tag string) error {
 	g.log.Info("Set tag %s", tag)
-	tagExists, err := g.tagExists(tag)
+	tagExists, err := g.git.tagExists(tag)
 	if err != nil {
 		return err
 	}
@@ -324,8 +329,8 @@ func (g *GitVersioning) setTag(tag string) error {
 	g.log.Info("Creating tag %s", tag)
 	_, err = g.repo.CreateTag(tag, g.branchHead.Hash(), &git.CreateTagOptions{
 		Tagger: &object.Signature{
-			Name:  g.mostRecentCommit.authorName,
-			Email: g.mostRecentCommit.authorEmail,
+			Name:  g.mostRecentCommit.AuthorName,
+			Email: g.mostRecentCommit.AuthorEmail,
 			When:  time.Now(),
 		},
 		Message: fmt.Sprintf("Generated by semantic-release %s", tag),
@@ -352,7 +357,7 @@ func (g *GitVersioning) pushTags() error {
 	err := g.repo.Push(po)
 
 	if err != nil {
-		return fmt.Errorf("error while pushing tag to remote branch due to: %w", err)
+		return err
 	}
 
 	return nil
@@ -384,25 +389,35 @@ func (g *GitVersioning) cloneRepoToDirectory() (*git.Repository, error) {
 }
 
 func (g *GitVersioning) initialize() error {
-	if err := g.getBranchPointedToHead(); err != nil {
-		return err
+	branchHead, err := g.git.getBranchPointedToHead()
+	if err != nil {
+		return fmt.Errorf("error while retrieving the branch pointed to HEAD due to: %w", err)
 	}
+	g.branchHead = branchHead
 
-	if err := g.getCommitHistory(); err != nil {
-		return err
+	commitHistory, err := g.git.getCommitHistory()
+	if err != nil {
+		return fmt.Errorf("error while retrieving the commit history  due to: %w", err)
 	}
+	g.commitHistory = commitHistory
 
-	if err := g.getMostRecentCommit(); err != nil {
-		return err
+	mostRecentCommit, err := g.git.getMostRecentCommit()
+	if err != nil {
+		return fmt.Errorf("error while retrieving tags from repository due to: %w", err)
 	}
+	g.mostRecentCommit = mostRecentCommit
 
-	if err := g.getAllTags(); err != nil {
-		return err
+	allTags, err := g.git.getAllTags()
+	if err != nil {
+		return fmt.Errorf("errow while getting all tags due to: %w", err)
 	}
+	g.tagsList = allTags
 
-	if err := g.getMostRecentTag(); err != nil {
-		return err
+	mostRecentTag, err := g.git.getMostRecentTag()
+	if err != nil {
+		return fmt.Errorf("error while getting most recent tage due to: %w", err)
 	}
+	g.mostRecentTag = mostRecentTag
 
 	return nil
 }
@@ -418,7 +433,6 @@ func New(log Logger, printElapsedTime ElapsedTime, url, username, password, dest
 	}
 
 	if err := gitLabVersioning.validate(); err != nil {
-		gitLabVersioning.log.Error(err.Error())
 		return nil, err
 	}
 
@@ -428,6 +442,20 @@ func New(log Logger, printElapsedTime ElapsedTime, url, username, password, dest
 	}
 
 	gitLabVersioning.repo = repo
+
+	gitLabVersioning.git = GitMethods{
+		getBranchPointedToHead: gitLabVersioning.getBranchPointedToHead,
+		getCommitHistory:       gitLabVersioning.getCommitHistory,
+		getMostRecentCommit:    gitLabVersioning.getMostRecentCommit,
+		getAllTags:             gitLabVersioning.getAllTags,
+		getMostRecentTag:       gitLabVersioning.getMostRecentTag,
+		addToStage:             gitLabVersioning.addToStage,
+		commitChanges:          gitLabVersioning.commitChanges,
+		push:                   gitLabVersioning.push,
+		tagExists:              gitLabVersioning.tagExists,
+		setTag:                 gitLabVersioning.setTag,
+		pushTags:               gitLabVersioning.pushTags,
+	}
 
 	if err := gitLabVersioning.initialize(); err != nil {
 		return nil, err

@@ -11,6 +11,7 @@ appvol=$(wd):/app
 run=docker run --rm -v $(appvol) -v $(cachevol) $(imgdev)
 runbuild=docker run --rm -ti -e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=amd64 -v $(appvol) -v $(cachevol) $(imgdev)
 runcompose=docker-compose run --rm 
+composeup=docker-compose up -d
 cov=coverage.out
 covhtml=coverage.html
 git_group_test=dataplatform
@@ -51,13 +52,6 @@ publish: image
 build: modcache imagedev
 	$(runbuild) go build -v -ldflags "-w -s -X main.Version=$(version)" -o $(run_local) ./cmd/semantic-release
 
-env: ##@environment Create gitlab container.
-	GITLAB_CONTAINER_NAME=${gitlab_container_name} docker-compose up --build -d gitlab
-
-env-stop: ##@environment Remove docker compose conmtainers.
-	docker-compose kill
-	docker-compose rm -v -f
-
 gitlab-shell:
 	docker exec -it ${gitlab_container_name} /bin/bash
 
@@ -76,7 +70,12 @@ gitlab-backup:
 gitlab-restore:
 	cd hack && ./gitlab-backup.sh restore ${gitlab_container_name}
 
-start-gitlab-env: env gitlab-restore
+env: ##@environment Create gitlab container.
+	cd hack && ./start-git-env.sh ${gitlab_container_name} "${composeup}"
+
+env-stop: ##@environment Remove docker compose conmtainers.
+	docker-compose kill
+	docker-compose rm -v -f
 
 clean-go-build:
 	./hack/clean-go-build.sh
@@ -96,8 +95,8 @@ run-help-cmt:
 check: modcache imagedev
 	$(run) go test -tags unit -timeout 20s -race -coverprofile=$(cov) ./...
 
-check-integration: imagedev start-gitlab-env
-	$(runcompose) --entrypoint "./hack/check-integration.sh" --no-deps semantic-release
+check-integration: imagedev env
+	$(runcompose) --entrypoint "./hack/check-integration.sh" semantic-release
 
 coverage: modcache check
 	$(run) go tool cover -html=$(cov) -o=$(covhtml)
