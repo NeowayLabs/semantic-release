@@ -1,47 +1,54 @@
 package semantic
 
 import (
-	"encoding/json"
 	"errors"
+	"fmt"
 )
 
+const (
+	colorCyan   = "\033[36m"
+	colorYellow = "\033[33m"
+	colorReset  = "\033[0m"
+	colorBGRed  = "\033[41;1;37m"
+)
+
+type Logger interface {
+	Info(s string, args ...interface{})
+	Error(s string, args ...interface{})
+}
+
 type RepositoryVersionControl interface {
-	GetChangeHash() (string, error)
-	GetChangeAuthorName() (string, error)
-	GetChangeAuthorEmail() (string, error)
-	GetChangeMessage() (string, error)
-	GetCurrentVersion() (string, error)
+	GetChangeHash() string
+	GetChangeAuthorName() string
+	GetChangeAuthorEmail() string
+	GetChangeMessage() string
+	GetCurrentVersion() string
 	UpgradeRemoteRepository(newVersion string) error
 }
 
 type VersionControl interface {
+	GetCommitChangeType(commitMessage string) (string, error)
 	GetNewVersion(commitMessage string, currentVersion string) (string, error)
 	MustSkipVersioning(commitMessage string) bool
 }
 
 type FilesVersionControl interface {
-	UpgradeChangeLog(path string, chagelogInfo interface{}, newVersion string) error
-	UpgradeVariableInFiles(filesInfo interface{}, newVersion string) error
+	UpgradeChangeLog(path, destinationPath string, chageLogInfo interface{}) error
+	UpgradeVariableInFiles(filesToUpgrade interface{}, newVersion string) error
 }
 
-type upgradeFiles struct {
-	files []upgradeFile
-}
-
-type upgradeFile struct {
-	path         string
-	variableName string
-}
-
-type changesInfo struct {
-	hash           string
-	authorName     string
-	authorEmail    string
-	message        string
-	currentVersion string
+type ChangesInfo struct {
+	Hash           string
+	AuthorName     string
+	AuthorEmail    string
+	Message        string
+	CurrentVersion string
+	NewVersion     string
+	ChangeType     string
 }
 
 type Semantic struct {
+	log                   Logger
 	rootPath              string
 	filesToUpdateVariable interface{}
 	repoVersionControl    RepositoryVersionControl
@@ -49,71 +56,49 @@ type Semantic struct {
 	filesVersionControl   FilesVersionControl
 }
 
-func (s *Semantic) getChangesInformation() (*changesInfo, error) {
-	hash, err := s.repoVersionControl.GetChangeHash()
-	if err != nil {
-		return nil, errors.New("error getting hash: " + err.Error())
-	}
-
-	authorName, err := s.repoVersionControl.GetChangeAuthorName()
-	if err != nil {
-		return nil, errors.New("error getting author name: " + err.Error())
-	}
-
-	authorEmail, err := s.repoVersionControl.GetChangeAuthorEmail()
-	if err != nil {
-		return nil, errors.New("error getting author email: " + err.Error())
-	}
-
-	message, err := s.repoVersionControl.GetChangeMessage()
-	if err != nil {
-		return nil, errors.New("error getting message: " + err.Error())
-	}
-
-	currentVersion, err := s.repoVersionControl.GetCurrentVersion()
-	if err != nil {
-		return nil, errors.New("error getting current version: " + err.Error())
-	}
-
-	return &changesInfo{hash: hash,
-		authorName:     authorName,
-		authorEmail:    authorEmail,
-		message:        message,
-		currentVersion: currentVersion}, nil
-}
-
 func (s *Semantic) GenerateNewRelease() error {
-	changesInfo, err := s.getChangesInformation()
-	if err != nil {
-		return errors.New("error while getting changes information due to: " + err.Error())
+	changesInfo := &ChangesInfo{
+		Hash:           s.repoVersionControl.GetChangeHash(),
+		AuthorName:     s.repoVersionControl.GetChangeAuthorName(),
+		AuthorEmail:    s.repoVersionControl.GetChangeAuthorEmail(),
+		Message:        s.repoVersionControl.GetChangeMessage(),
+		CurrentVersion: s.repoVersionControl.GetCurrentVersion(),
 	}
 
-	if s.versionControl.MustSkipVersioning(changesInfo.message) {
+	if s.versionControl.MustSkipVersioning(changesInfo.Message) {
+		s.log.Info(colorCyan + "Semantic Release has been skiped by commit message tag [skip]" + colorReset)
 		return nil
 	}
 
-	newVersion, err := s.versionControl.GetNewVersion(changesInfo.message, changesInfo.currentVersion)
+	newVersion, err := s.versionControl.GetNewVersion(changesInfo.Message, changesInfo.CurrentVersion)
 	if err != nil {
 		return errors.New("error while getting new version due to: " + err.Error())
 	}
 
-	if err := s.filesVersionControl.UpgradeChangeLog(s.rootPath, changesInfo, newVersion); err != nil {
+	changesInfo.NewVersion = newVersion
+
+	commitChangeType, err := s.versionControl.GetCommitChangeType(changesInfo.Message)
+	if err != nil {
+		return fmt.Errorf("error while getting commit change type due to: %s", err.Error())
+	}
+
+	changesInfo.ChangeType = commitChangeType
+
+	s.log.Info(colorBGRed + "MOST RECENT COMMIT:" + colorReset)
+	s.log.Info("Hash: %s", changesInfo.Hash)
+	s.log.Info("Author Name: %s", changesInfo.AuthorName)
+	s.log.Info("Author Email: %s", changesInfo.AuthorEmail)
+	s.log.Info("Message: %s", changesInfo.Message)
+	s.log.Info("Current Version: %s", changesInfo.CurrentVersion)
+	s.log.Info(fmt.Sprintf("Commit change type: "+colorYellow+"%s"+colorReset, commitChangeType))
+	s.log.Info("New Version: %s", changesInfo.NewVersion)
+
+	if err := s.filesVersionControl.UpgradeChangeLog(fmt.Sprintf("%s/CHANGELOG.md", s.rootPath), "", changesInfo); err != nil {
 		return errors.New("error while upgrading changelog file due to: " + err.Error())
 	}
 
 	if s.filesToUpdateVariable != nil {
-
-		filesToUpdateBytes, err := json.Marshal(s.filesToUpdateVariable)
-		if err != nil {
-			return errors.New("error marshalling files to uptade information")
-		}
-
-		var filesToUpdateVariable upgradeFiles
-		if err := json.Unmarshal(filesToUpdateBytes, &filesToUpdateVariable); err != nil {
-			return errors.New("error unmarshalling files to uptade information")
-		}
-
-		if err := s.filesVersionControl.UpgradeVariableInFiles(s.filesToUpdateVariable, newVersion); err != nil {
+		if err := s.filesVersionControl.UpgradeVariableInFiles(s.filesToUpdateVariable, changesInfo.NewVersion); err != nil {
 			return errors.New("error while upgrading variables in files due to: " + err.Error())
 		}
 	}
@@ -125,8 +110,9 @@ func (s *Semantic) GenerateNewRelease() error {
 	return nil
 }
 
-func New(rootPath string, filesToUpdateVariable interface{}, repoVersionControl RepositoryVersionControl, filesVersionControl FilesVersionControl, versionControl VersionControl) *Semantic {
+func New(log Logger, rootPath string, filesToUpdateVariable interface{}, repoVersionControl RepositoryVersionControl, filesVersionControl FilesVersionControl, versionControl VersionControl) *Semantic {
 	return &Semantic{
+		log:                   log,
 		rootPath:              rootPath,
 		filesToUpdateVariable: filesToUpdateVariable,
 		repoVersionControl:    repoVersionControl,

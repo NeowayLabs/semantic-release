@@ -16,7 +16,7 @@ cov=coverage.out
 covhtml=coverage.html
 git_group_test=dataplatform
 git_project_test=integration-tests
-git_host_test=gitlab.integration-tests.com
+git_host_test=localhost
 gitlab_container_name=gitlab_integration_tests
 run_local=./cmd/semantic-release/semantic-release
 
@@ -71,6 +71,9 @@ gitlab-restore:
 	cd hack && ./gitlab-backup.sh restore ${gitlab_container_name}
 
 env: ##@environment Create gitlab container.
+	 GITLAB_CONTAINER_NAME=${gitlab_container_name} ${composeup} gitlab
+
+start-env: ##@environment Create gitlab container.
 	cd hack && ./start-git-env.sh ${gitlab_container_name} "${composeup}"
 
 env-stop: ##@environment Remove docker compose conmtainers.
@@ -86,16 +89,16 @@ build-go: clean-go-build
 run-local: build-go
 	$(run_local) up -git-group ${git_group_test} -git-project ${git_project_test} -git-host ${git_host_test} -username root -password password -setup-py true
 
-run-help:
+run-help: build-go
 	$(run_local) help
 
-run-help-cmt:
+run-help-cmt: build-go
 	$(run_local) help-cmt
 
 check: modcache imagedev
 	$(run) go test -tags unit -timeout 20s -race -coverprofile=$(cov) ./...
 
-check-integration: imagedev env
+check-integration: imagedev start-env
 	$(runcompose) --entrypoint "./hack/check-integration.sh" semantic-release
 
 coverage: modcache check

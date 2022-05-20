@@ -144,7 +144,7 @@ func (v *VersionControl) GetNewVersion(commitMessage string, currentVersion stri
 	defer v.printElapsedTime("GetNewVersion")()
 	v.log.Info("generating new version from %s", currentVersion)
 
-	commitChangeType, err := v.getCommitChangeTypeFromMessage(commitMessage)
+	commitChangeType, err := v.GetCommitChangeType(commitMessage)
 	if err != nil {
 		return "", fmt.Errorf("error while finding commit change type within commit message due to: %w", err)
 	}
@@ -170,13 +170,13 @@ func (v *VersionControl) GetNewVersion(commitMessage string, currentVersion stri
 	return newVersion, nil
 }
 
-// getCommitChangeTypeFromMessage get the commit type from Message
+// GetCommitChangeType get the commit type from Message
 // I.e.:
 //       type: [fix]
 //       message: Commit subject here.
 // Output: fix
-func (v *VersionControl) getCommitChangeTypeFromMessage(commitMessage string) (string, error) {
-	v.log.Info("getting commit type from message")
+func (v *VersionControl) GetCommitChangeType(commitMessage string) (string, error) {
+	v.log.Info("getting commit type from message %s", commitMessage)
 	splitedMessage := strings.Split(commitMessage, "\n")
 	for _, row := range splitedMessage {
 		for _, changeType := range commitChangeTypes {
@@ -210,7 +210,7 @@ func (v *VersionControl) hasStringInSlice(value string, slice []string) bool {
 //       commitChangeType: [skip]
 // Output: true
 func (v *VersionControl) MustSkipVersioning(commitMessage string) bool {
-	commitChangeType, err := v.getCommitChangeTypeFromMessage(commitMessage)
+	commitChangeType, err := v.GetCommitChangeType(commitMessage)
 	if err != nil {
 		return true
 	}
