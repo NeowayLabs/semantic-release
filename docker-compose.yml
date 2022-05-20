@@ -9,8 +9,8 @@ services:
   gitlab:
       image: 'gitlab/gitlab-ee:14.9.2-ee.0'
       container_name: ${GITLAB_CONTAINER_NAME}
-      restart: always
       hostname: 'gitlab'
+      restart: always
       environment:
         GITLAB_OMNIBUS_CONFIG: |
           external_url 'https://gitlab.com';        

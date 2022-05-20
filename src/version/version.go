@@ -62,7 +62,7 @@ func (v *VersionControl) splitVersionMajorMinorPatch(version string) (map[string
 		versionInt, err := strconv.Atoi(version)
 		if err != nil {
 			v.log.Error("could not convert %v to int", version)
-			return nil, errors.New(fmt.Sprintf("could not convert %v to int", version))
+			return nil, fmt.Errorf("could not convert %v to int", version)
 
 		}
 		resultMap[key] = versionInt
@@ -88,7 +88,7 @@ func (v *VersionControl) getUpgradeType(commitChangeType string) (string, error)
 	} else if v.hasStringInSlice(commitChangeType, commitChangeTypePatchUpgrade) {
 		return patch, nil
 	}
-	return "", errors.New(fmt.Sprintf("%s is an invalid upgrade change type", commitChangeType))
+	return "", fmt.Errorf("%s is an invalid upgrade change type", commitChangeType)
 }
 
 // upgradeVersion upgrade the current version based on the upgradeType.
@@ -121,6 +121,13 @@ func (v *VersionControl) upgradeVersion(upgradeType string, currentMajor, curren
 	return newVersion
 }
 
+func (v *VersionControl) isFirstVersion(version string) bool {
+	if version == "0.1.0" || version == "0.0.1" {
+		return true
+	}
+	return false
+}
+
 // GetNewVersion upgrade the current version based on the commitChangeType.
 // It calls the getUpgradeType function to define where to upgrade the version (MAJOR.MINOR.PATCH).
 // Args:
@@ -139,12 +146,12 @@ func (v *VersionControl) GetNewVersion(commitMessage string, currentVersion stri
 
 	commitChangeType, err := v.getCommitChangeTypeFromMessage(commitMessage)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("error while finding commit change type within commit message due to: %s", err.Error()))
+		return "", fmt.Errorf("error while finding commit change type within commit message due to: %w", err)
 	}
 
 	curVersion, err := v.splitVersionMajorMinorPatch(currentVersion)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("error while spliting version into MAJOR.MINOR.PATCH due to: %s", err.Error()))
+		return "", fmt.Errorf("error while spliting version into MAJOR.MINOR.PATCH due to: %w", err)
 	}
 	currentMajor := curVersion[major]
 	currentMinor := curVersion[minor]
@@ -152,10 +159,13 @@ func (v *VersionControl) GetNewVersion(commitMessage string, currentVersion stri
 
 	upgradeType, err := v.getUpgradeType(commitChangeType)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("error while getting upgrade type due to: %s", err.Error()))
+		return "", fmt.Errorf("error while getting upgrade type due to: %w", err)
 	}
 
 	newVersion := v.upgradeVersion(upgradeType, currentMajor, currentMinor, currentPatch)
+	if v.isFirstVersion(newVersion) {
+		return "1.0.0", nil
+	}
 
 	return newVersion, nil
 }
