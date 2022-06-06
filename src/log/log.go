@@ -73,7 +73,7 @@ func (l *Log) Warn(s string, args ...interface{}) {
 }
 
 func (l *Log) Fatal(s string, args ...interface{}) {
-	if l.level == fatalLevel {
+	if l.level == debugLevel || l.level == fatalLevel {
 		l.log.Printf(l.format(fmt.Sprintf(s, args...)))
 
 		if l.exitWhenFatal {

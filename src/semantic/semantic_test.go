@@ -8,54 +8,35 @@ import (
 	"os"
 	"testing"
 
+	"github.com/NeowayLabs/semantic-release/src/log"
 	"github.com/NeowayLabs/semantic-release/src/semantic"
 	"github.com/NeowayLabs/semantic-release/src/tests"
 )
 
-const (
-	shouldbeEqualMessage = "Values should be equal:\n Actual: %v\nExpected: %v"
-)
-
 type RepositoryVersionControlMock struct {
-	hash       string
-	errGetHash error
-
-	authorName    string
-	errAuthorName error
-
-	authorEmail    string
-	errAuthorEmail error
-
-	message       string
-	errGetMessage error
-
+	hash                 string
+	authorName           string
+	authorEmail          string
+	message              string
 	currentVersion       string
-	errGetCurrentVersion error
-
-	currentChangesInfo    changesInfoMock
-	errCurrentChangesInfo error
-
+	currentChangesInfo   changesInfoMock
 	errUpgradeRemoteRepo error
 }
 
-func (r *RepositoryVersionControlMock) GetChangeHash() (string, error) {
-	return r.hash, r.errGetHash
+func (r *RepositoryVersionControlMock) GetChangeHash() string {
+	return r.hash
 }
-func (r *RepositoryVersionControlMock) GetChangeAuthorName() (string, error) {
-	return r.authorName, r.errAuthorName
+func (r *RepositoryVersionControlMock) GetChangeAuthorName() string {
+	return r.authorName
 }
-func (r *RepositoryVersionControlMock) GetChangeAuthorEmail() (string, error) {
-	return r.authorEmail, r.errAuthorEmail
+func (r *RepositoryVersionControlMock) GetChangeAuthorEmail() string {
+	return r.authorEmail
 }
-func (r *RepositoryVersionControlMock) GetChangeMessage() (string, error) {
-	return r.message, r.errGetMessage
+func (r *RepositoryVersionControlMock) GetChangeMessage() string {
+	return r.message
 }
-func (r *RepositoryVersionControlMock) GetCurrentVersion() (string, error) {
-	return r.currentVersion, r.errGetCurrentVersion
-}
-
-func (r *RepositoryVersionControlMock) getChangesInformation() (*changesInfoMock, error) {
-	return &r.currentChangesInfo, r.errCurrentChangesInfo
+func (r *RepositoryVersionControlMock) GetCurrentVersion() string {
+	return r.currentVersion
 }
 
 func (r *RepositoryVersionControlMock) UpgradeRemoteRepository(newVersion string) error {
@@ -63,9 +44,15 @@ func (r *RepositoryVersionControlMock) UpgradeRemoteRepository(newVersion string
 }
 
 type VersionControlMock struct {
-	newVersion       string
-	errGetNewVersion error
-	mustSkip         bool
+	newVersion          string
+	errGetNewVersion    error
+	mustSkip            bool
+	commitChangeType    string
+	errCommitChangeType error
+}
+
+func (v *VersionControlMock) GetCommitChangeType(commitMessage string) (string, error) {
+	return v.commitChangeType, v.errCommitChangeType
 }
 
 func (v *VersionControlMock) GetNewVersion(commitMessage string, currentVersion string) (string, error) {
@@ -81,10 +68,10 @@ type FilesVersionControlMock struct {
 	errUpgradeVariableInFiles error
 }
 
-func (f *FilesVersionControlMock) UpgradeChangeLog(path string, chagelogInfo interface{}, newVersion string) error {
+func (f *FilesVersionControlMock) UpgradeChangeLog(path, destinationPath string, chageLogInfo interface{}) error {
 	return f.errUpgradeChangeLog
 }
-func (f *FilesVersionControlMock) UpgradeVariableInFiles(filesInfo interface{}, newVersion string) error {
+func (f *FilesVersionControlMock) UpgradeVariableInFiles(filesToUpgrade interface{}, newVersion string) error {
 	return f.errUpgradeVariableInFiles
 }
 
@@ -101,7 +88,12 @@ func setup() *fixture {
 }
 
 func (f *fixture) NewSemantic() *semantic.Semantic {
-	return semantic.New(f.rootPath, f.filesToUpdateVariable, f.repoVersionMock, f.filesVersionMock, f.versionControlMock)
+	logger, err := log.New("test", "", "info")
+	if err != nil {
+		errors.New("error while getting new log")
+	}
+
+	return semantic.New(logger, f.rootPath, f.filesToUpdateVariable, f.repoVersionMock, f.filesVersionMock, f.versionControlMock)
 }
 
 type upgradeFilesMock struct {
@@ -109,8 +101,9 @@ type upgradeFilesMock struct {
 }
 
 type upgradeFileMock struct {
-	path         string
-	variableName string
+	path            string
+	destinationPath string
+	variableName    string
 }
 
 type changesInfoMock struct {
@@ -119,6 +112,8 @@ type changesInfoMock struct {
 	authorEmail    string
 	message        string
 	currentVersion string
+	newVersion     string
+	changeType     string
 }
 
 func (f *fixture) GetValidChangesInfo() changesInfoMock {
@@ -136,52 +131,9 @@ func (f *fixture) GetValidUpgradeFilesInfo() upgradeFilesMock {
 	var upgradeFileInfo upgradeFileMock
 	upgradeFileInfo.path = "file/path.py"
 	upgradeFileInfo.variableName = "__version__"
+	upgradeFileInfo.destinationPath = ""
 	upgradeFilesInfo.files = append(upgradeFilesInfo.files, upgradeFileInfo)
 	return upgradeFilesInfo
-}
-
-func TestGenerateNewReleaseErrorGetChangeHash(t *testing.T) {
-	f := setup()
-	f.repoVersionMock.errGetHash = errors.New("test")
-	f.rootPath = os.Getenv("HOME")
-	semanticService := f.NewSemantic()
-	actualErr := semanticService.GenerateNewRelease()
-
-	tests.AssertEqualValues(t, "error while getting changes information due to: error getting hash: test", actualErr.Error())
-	tests.AssertError(t, actualErr)
-}
-
-func TestGenerateNewReleaseErrorGetChangeAuthorName(t *testing.T) {
-	f := setup()
-	f.repoVersionMock.errAuthorName = errors.New("test")
-	f.rootPath = os.Getenv("HOME")
-	semanticService := f.NewSemantic()
-	actualErr := semanticService.GenerateNewRelease()
-
-	tests.AssertEqualValues(t, "error while getting changes information due to: error getting author name: test", actualErr.Error())
-	tests.AssertError(t, actualErr)
-}
-
-func TestGenerateNewReleaseErrorGetChangeAuthorEmail(t *testing.T) {
-	f := setup()
-	f.repoVersionMock.errAuthorEmail = errors.New("test")
-	f.rootPath = os.Getenv("HOME")
-	semanticService := f.NewSemantic()
-	actualErr := semanticService.GenerateNewRelease()
-
-	tests.AssertEqualValues(t, "error while getting changes information due to: error getting author email: test", actualErr.Error())
-	tests.AssertError(t, actualErr)
-}
-
-func TestGenerateNewReleaseErrorGetChangeMessage(t *testing.T) {
-	f := setup()
-	f.repoVersionMock.errGetMessage = errors.New("test")
-	f.rootPath = os.Getenv("HOME")
-	semanticService := f.NewSemantic()
-	actualErr := semanticService.GenerateNewRelease()
-
-	tests.AssertEqualValues(t, "error while getting changes information due to: error getting message: test", actualErr.Error())
-	tests.AssertError(t, actualErr)
 }
 
 func TestGenerateNewReleaseMustSkip(t *testing.T) {
@@ -192,17 +144,6 @@ func TestGenerateNewReleaseMustSkip(t *testing.T) {
 	actualErr := semanticService.GenerateNewRelease()
 
 	tests.AssertNoError(t, actualErr)
-}
-
-func TestGenerateNewReleaseErrorGetCurrentVersion(t *testing.T) {
-	f := setup()
-	f.repoVersionMock.errGetCurrentVersion = errors.New("test")
-	f.rootPath = os.Getenv("HOME")
-	semanticService := f.NewSemantic()
-	actualErr := semanticService.GenerateNewRelease()
-
-	tests.AssertEqualValues(t, "error while getting changes information due to: error getting current version: test", actualErr.Error())
-	tests.AssertError(t, actualErr)
 }
 
 func TestGenerateNewReleaseErrorGetNewVersion(t *testing.T) {
@@ -226,30 +167,6 @@ func TestGenerateNewReleaseErrorUpgradeChangeLog(t *testing.T) {
 	actualErr := semanticService.GenerateNewRelease()
 
 	tests.AssertEqualValues(t, "error while upgrading changelog file due to: upgrade changelog error", actualErr.Error())
-	tests.AssertError(t, actualErr)
-}
-
-func TestGenerateNewReleaseErrorUpgradeVariablesInFilesMarshalError(t *testing.T) {
-	f := setup()
-	f.repoVersionMock.currentChangesInfo = f.GetValidChangesInfo()
-	f.filesToUpdateVariable = make(chan int)
-
-	semanticService := f.NewSemantic()
-	actualErr := semanticService.GenerateNewRelease()
-
-	tests.AssertEqualValues(t, "error marshalling files to uptade information", actualErr.Error())
-	tests.AssertError(t, actualErr)
-}
-
-func TestGenerateNewReleaseErrorUpgradeVariablesInFilesUnmarshalError(t *testing.T) {
-	f := setup()
-	f.repoVersionMock.currentChangesInfo = f.GetValidChangesInfo()
-	f.filesToUpdateVariable = "anything"
-
-	semanticService := f.NewSemantic()
-	actualErr := semanticService.GenerateNewRelease()
-
-	tests.AssertEqualValues(t, "error unmarshalling files to uptade information", actualErr.Error())
 	tests.AssertError(t, actualErr)
 }
 
@@ -277,6 +194,17 @@ func TestGenerateNewReleaseUpgradeRemoteRepositoryError(t *testing.T) {
 
 	tests.AssertEqualValues(t, "error while upgrading remote repository due to: upgrade remote repository error", actualErr.Error())
 	tests.AssertError(t, actualErr)
+}
+
+func TestGenerateNewReleaseGetCommitChangeError(t *testing.T) {
+	f := setup()
+	f.repoVersionMock.currentChangesInfo = f.GetValidChangesInfo()
+	f.versionControlMock.errCommitChangeType = errors.New("invalid change type")
+
+	semanticService := f.NewSemantic()
+	actualErr := semanticService.GenerateNewRelease()
+	tests.AssertError(t, actualErr)
+	tests.AssertEqualValues(t, "error while getting commit change type due to: invalid change type", actualErr.Error())
 }
 
 func TestGenerateNewReleaseSuccess(t *testing.T) {

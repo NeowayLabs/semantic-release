@@ -35,13 +35,19 @@ Now, you can use it in your CI files.
 The semantic release Docker image can be called within a `.gitlab-ci.yml` file, git hub action, or travis ci Continuous Integration (CI) stage as follows.
 
 ```yaml
+stages:
+  - semantic-release
+
 semantic-release:
     stage: semantic-release
     only:
         refs:
             - master
+    before_script: 
+        - docker pull registry.com/dataplatform/semantic-release:latest
     script:
-        - docker run registry.com/group/semantic-release up -git-host $CI_SERVER_HOST -git-group gitGroupNameHere -git-project $CI_PROJECT_NAME -username gitUsername -password gitPassword
+        - docker run registry.com/dataplatform/semantic-release:latest up -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
+
 ```
 
 If your project is a Python project you can add the flag `-setup-py true` to update the release version in this file too.
@@ -123,17 +129,12 @@ make static-analysis
 
 ## Integration Tests
 
-Set up the required environment:
-```
-make env
-```
-
 Run the integration tests as soon as the gitlab container is available:
 ```
 make check-integration
 ```
 
-You can remove the environment running the following command:
+You can manually remove the gitlab container running the following command:
 ```
 make env-stop
 ```
@@ -144,15 +145,6 @@ You can also run the application locally by running the following commands:
 Create a go binary file and run it:
 ```
 make run-local
-```
-
-Run with docker:
-```
-make image
-```
-
-```
-make run-docker-local
 ```
 
 ## Releasing
