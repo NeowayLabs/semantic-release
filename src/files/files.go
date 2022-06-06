@@ -55,12 +55,13 @@ type FileVersion struct {
 	repositoryRootPath string
 	groupName          string
 	projectName        string
+	variableNameFound  bool
 }
 
 func (f *FileVersion) openFile(filePath string) (*os.File, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while oppening file due to: %w", err)
 	}
 	return file, nil
 }
@@ -84,7 +85,15 @@ func (f *FileVersion) getMessage(messageRow string) (string, error) {
 	return message, nil
 }
 
-// pretiffy aims to keep a short message based on the commit message, removing extra information such as commit type.
+func (f *FileVersion) isMessageLongerThanLimit(message string) bool {
+	return len(message) >= 150
+}
+
+func (f *FileVersion) upperFirstLetterOfSentence(text string) string {
+	return fmt.Sprintf("%s%s", strings.ToUpper(text[:1]), text[1:])
+}
+
+// prettifyCommitMessage aims to keep a short message based on the commit message, removing extra information such as commit type.
 // Args:
 // 		commitMessage (string): Full commit message.
 // Returns:
@@ -101,7 +110,7 @@ func (f *FileVersion) prettifyCommitMessage(commitMessage string) (string, error
 
 			currentMessage, err := f.getMessage(row)
 			if err != nil {
-				return "", err
+				return "", fmt.Errorf("error while getting message due to: %w", err)
 			}
 			message = currentMessage
 		}
@@ -110,14 +119,12 @@ func (f *FileVersion) prettifyCommitMessage(commitMessage string) (string, error
 	if message == "" {
 		return "", errors.New("commit message has no tag 'message:'")
 	}
-	// Limmit message to 150 characters to avoid long messages.
-	if len(message) >= 150 {
+
+	if f.isMessageLongerThanLimit(message) {
 		message = fmt.Sprintf("%s...", message[:150])
 	}
 
-	// Upper only first letter of the sentence.
-	message = fmt.Sprintf("%s%s", strings.ToUpper(message[:1]), message[1:])
-	return message, nil
+	return f.upperFirstLetterOfSentence(message), nil
 }
 
 func (f *FileVersion) containsVariableNameInText(text, variableName, copySignal string) bool {
@@ -146,6 +153,44 @@ func (f *FileVersion) unmarshalUpgradeFiles(filesToUpgrade interface{}) (*Upgrad
 	return &filesToUpdateResult, nil
 }
 
+func (f *FileVersion) writeFile(destinationPath, originPath string, content []byte) error {
+	destination := f.setDefaultPath(destinationPath, originPath)
+
+	if err := ioutil.WriteFile(destination, content, 0666); err != nil {
+		return fmt.Errorf("error while writing file %s due to: %w", destination, err)
+	}
+
+	return nil
+}
+
+func (f *FileVersion) getFileOutputContent(scanner *bufio.Scanner, file UpgradeFile, newVersion string) ([]byte, error) {
+	var outputData []byte
+
+	f.variableNameFound = false
+	for scanner.Scan() {
+		currentLineText := scanner.Text()
+		outputLineText := []byte(fmt.Sprintf("%s\n", currentLineText))
+
+		if f.containsVariableNameInText(currentLineText, file.VariableName, ":=") {
+			outputLineText = []byte(fmt.Sprintf("%s := \"%s\"\n", file.VariableName, newVersion))
+			f.variableNameFound = true
+		}
+
+		if f.containsVariableNameInText(currentLineText, file.VariableName, "=") {
+			outputLineText = []byte(fmt.Sprintf("%s = \"%s\"\n", file.VariableName, newVersion))
+			f.variableNameFound = true
+		}
+
+		outputData = append(outputData, outputLineText...)
+	}
+
+	if !f.variableNameFound {
+		return nil, fmt.Errorf("variable name `%s` not found on file `%s`", file.VariableName, file.Path)
+	}
+
+	return outputData, nil
+}
+
 // UpgradeVariableInFiles aims to update given files with the new release version.
 // It will update the files row containing a given variable name.
 // I.e.:
@@ -155,11 +200,9 @@ func (f *FileVersion) unmarshalUpgradeFiles(filesToUpgrade interface{}) (*Upgrad
 func (f *FileVersion) UpgradeVariableInFiles(filesToUpgrade interface{}, newVersion string) error {
 	defer f.elapsedTime("UpgradeVariableInFiles")()
 
-	var outputData []byte
-
 	filesToUpdate, err := f.unmarshalUpgradeFiles(filesToUpgrade)
 	if err != nil {
-		return err
+		return fmt.Errorf("error unmarshalling files to upgrade due to: %w", err)
 	}
 
 	for _, currentFile := range filesToUpdate.Files {
@@ -173,35 +216,17 @@ func (f *FileVersion) UpgradeVariableInFiles(filesToUpgrade interface{}, newVers
 
 		scanner := bufio.NewScanner(file)
 
-		variableNameFound := false
-		for scanner.Scan() {
-			currentLineText := scanner.Text()
-			outputLineText := []byte(fmt.Sprintf("%s\n", currentLineText))
-
-			if f.containsVariableNameInText(currentLineText, currentFile.VariableName, ":=") {
-				outputLineText = []byte(fmt.Sprintf("%s := \"%s\"\n", currentFile.VariableName, newVersion))
-				variableNameFound = true
-			}
-
-			if f.containsVariableNameInText(currentLineText, currentFile.VariableName, "=") {
-				outputLineText = []byte(fmt.Sprintf("%s = \"%s\"\n", currentFile.VariableName, newVersion))
-				variableNameFound = true
-			}
-
-			outputData = append(outputData, outputLineText...)
-		}
-
-		if !variableNameFound {
-			return fmt.Errorf("variable name `%s` not found on file `%s`", currentFile.VariableName, currentFile.Path)
+		outputData, err := f.getFileOutputContent(scanner, currentFile, newVersion)
+		if err != nil {
+			return fmt.Errorf("error while getting file output data due to: %w", err)
 		}
 
 		if err := scanner.Err(); err != nil {
-			return err
+			return fmt.Errorf("error while scanning file %s due to: %w", currentFile.Path, err)
 		}
 
-		destinationPath := f.setDefaultPath(currentFile.DestinationPath, currentFile.Path)
-		if err = ioutil.WriteFile(destinationPath, outputData, 0666); err != nil {
-			return err
+		if err = f.writeFile(currentFile.DestinationPath, currentFile.Path, outputData); err != nil {
+			return fmt.Errorf("error while writing upgrade variables in file due to: %w", err)
 		}
 	}
 
@@ -268,6 +293,24 @@ func (f *FileVersion) unmarshalChangesInfo(changes interface{}) (*ChangesInfo, e
 	return &changelog, nil
 }
 
+func (f *FileVersion) formatChangeLogContent(changes *ChangesInfo) (string, error) {
+	commitMessage, err := f.prettifyCommitMessage(changes.Message)
+	if err != nil {
+		return "", fmt.Errorf("prettify commit message error: %w", err)
+	}
+
+	// textToAdd
+	// I.e.:
+	// ## v1.0.0:
+	// - feat - [b25a9af](https://gilabhost/groupName/projectName/commit/b25a9af78c30de0d03ca2ee6d18c66bbc4804395): Commit message here (@user.name)
+	return fmt.Sprintf("\n## v%s\n- %s - %s: %s (%s)\n---\n\n",
+		changes.NewVersion,
+		changes.ChangeType,
+		f.getCommitUrl(*changes),
+		commitMessage,
+		f.prettifyEmail(changes.AuthorEmail)), nil
+}
+
 // UpgradeChangelog aims to append the new release version with the commit information to the CHANGELOG.md file.
 func (f *FileVersion) UpgradeChangeLog(path, destinationPath string, chageLogInfo interface{}) error {
 	defer f.elapsedTime("UpgradeChangeLog")()
@@ -278,31 +321,19 @@ func (f *FileVersion) UpgradeChangeLog(path, destinationPath string, chageLogInf
 
 	changelog, err := f.unmarshalChangesInfo(chageLogInfo)
 	if err != nil {
-		return err
+		return fmt.Errorf("error unmarshalling changes info due to: %w", err)
 	}
 
 	if err := f.validateChangesInfo(*changelog); err != nil {
-		return err
+		return fmt.Errorf("error validating changelog info due to: %w", err)
 	}
 
-	commitMessage, err := f.prettifyCommitMessage(changelog.Message)
+	textToAdd, err := f.formatChangeLogContent(changelog)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while formatting changelog content due to: %w", err)
 	}
 
-	// textToAdd
-	// I.e.:
-	// ## v1.0.0:
-	// - feat - [b25a9af](https://gilabhost/groupName/projectName/commit/b25a9af78c30de0d03ca2ee6d18c66bbc4804395): Commit message here (@user.name)
-	textToAdd := fmt.Sprintf("\n## v%s\n- %s - %s: %s (%s)\n---\n\n",
-		changelog.NewVersion,
-		changelog.ChangeType,
-		f.getCommitUrl(*changelog),
-		commitMessage,
-		f.prettifyEmail(changelog.AuthorEmail))
-
-	var outputData []byte
-	outputData = append(outputData, []byte(textToAdd)...)
+	outputData := []byte(textToAdd)
 
 	file, err := f.openFile(originPath)
 	if err != nil {
@@ -321,9 +352,8 @@ func (f *FileVersion) UpgradeChangeLog(path, destinationPath string, chageLogInf
 		return fmt.Errorf("\n\nerror while scanning file: %s due to: %w", originPath, err)
 	}
 
-	destinationPath = f.setDefaultPath(destinationPath, path)
-	if err = ioutil.WriteFile(destinationPath, outputData, 0666); err != nil {
-		return fmt.Errorf("\n\nerror while writing %s file with new version %s due to: %w", originPath, changelog.NewVersion, err)
+	if err = f.writeFile(destinationPath, path, outputData); err != nil {
+		return fmt.Errorf("error while writing new version to changelog file due to: %w", err)
 	}
 
 	return nil

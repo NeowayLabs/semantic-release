@@ -76,7 +76,7 @@ func TestUpgradeVariableInFilesVariableNameNotFoundError(t *testing.T) {
 	filesToUpgrade := UpgradeFilesMock{Files: []UpgradeFileMock{{Path: "mock/setup_mock.py", VariableName: "version"}}}
 	err := filesVersion.UpgradeVariableInFiles(filesToUpgrade, "1.0.1")
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "variable name `version` not found on file `mock/setup_mock.py`", err.Error())
+	tests.AssertEqualValues(t, "error while getting file output data due to: variable name `version` not found on file `mock/setup_mock.py`", err.Error())
 
 }
 
@@ -86,7 +86,7 @@ func TestUpgradeVariableInFilesMarsahlError(t *testing.T) {
 
 	err := filesVersion.UpgradeVariableInFiles(make(chan int), "1.0.1")
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "error marshalling files to uptade", err.Error())
+	tests.AssertEqualValues(t, "error unmarshalling files to upgrade due to: error marshalling files to uptade", err.Error())
 
 }
 
@@ -96,7 +96,7 @@ func TestUpgradeVariableInFilesUnmarsahlError(t *testing.T) {
 
 	err := filesVersion.UpgradeVariableInFiles("", "1.0.1")
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "error unmarshalling files to uptade", err.Error())
+	tests.AssertEqualValues(t, "error unmarshalling files to upgrade due to: error unmarshalling files to uptade", err.Error())
 
 }
 
@@ -107,7 +107,7 @@ func TestUpgradeVariableInFilesOpenFileError(t *testing.T) {
 	filesToUpgrade := UpgradeFilesMock{Files: []UpgradeFileMock{{Path: "mock/setup_404.py", VariableName: "__version__"}}}
 	err := filesVersion.UpgradeVariableInFiles(filesToUpgrade, "1.0.1")
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "open mock/setup_404.py: no such file or directory", err.Error())
+	tests.AssertEqualValues(t, "error while oppening file due to: open mock/setup_404.py: no such file or directory", err.Error())
 
 }
 
@@ -118,7 +118,7 @@ func TestUpgradeVariableInFilesWriteFileError(t *testing.T) {
 	filesToUpgrade := UpgradeFilesMock{Files: []UpgradeFileMock{{Path: "mock/setup_mock.py", DestinationPath: "mock/test/setup_mock_404.py", VariableName: "__version__"}}}
 	err := filesVersion.UpgradeVariableInFiles(filesToUpgrade, "1.0.1")
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "open mock/test/setup_mock_404.py: no such file or directory", err.Error())
+	tests.AssertEqualValues(t, "error while writing upgrade variables in file due to: error while writing file mock/test/setup_mock_404.py due to: open mock/test/setup_mock_404.py: no such file or directory", err.Error())
 
 }
 
@@ -173,7 +173,7 @@ func TestUpgradeChangeLogMarshalChangeLogInfoError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", make(chan int))
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "error marshalling files to changelog information", err.Error())
+	tests.AssertEqualValues(t, "error unmarshalling changes info due to: error marshalling files to changelog information", err.Error())
 }
 
 func TestUpgradeChangeLogUnmarshalError(t *testing.T) {
@@ -185,7 +185,7 @@ func TestUpgradeChangeLogUnmarshalError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", "")
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "error unmarshalling changelog information", err.Error())
+	tests.AssertEqualValues(t, "error unmarshalling changes info due to: error unmarshalling changelog information", err.Error())
 }
 
 func TestUpgradeChangeLogValidateChangesInfoEmptyAuthorNameError(t *testing.T) {
@@ -196,7 +196,7 @@ func TestUpgradeChangeLogValidateChangesInfoEmptyAuthorNameError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "author name cannot be empty", err.Error())
+	tests.AssertEqualValues(t, "error validating changelog info due to: author name cannot be empty", err.Error())
 }
 
 func TestUpgradeChangeLogValidateChangesInfoEmptyAuthorEmailBadEntryError(t *testing.T) {
@@ -207,7 +207,7 @@ func TestUpgradeChangeLogValidateChangesInfoEmptyAuthorEmailBadEntryError(t *tes
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "bad author email entry", err.Error())
+	tests.AssertEqualValues(t, "error validating changelog info due to: bad author email entry", err.Error())
 }
 
 func TestUpgradeChangeLogValidateChangesInfoEmptyAuthorEmailError(t *testing.T) {
@@ -218,7 +218,7 @@ func TestUpgradeChangeLogValidateChangesInfoEmptyAuthorEmailError(t *testing.T) 
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "bad author email entry", err.Error())
+	tests.AssertEqualValues(t, "error validating changelog info due to: bad author email entry", err.Error())
 }
 
 func TestUpgradeChangeLogValidateChangesInfoEmptyChangeTypeError(t *testing.T) {
@@ -229,7 +229,7 @@ func TestUpgradeChangeLogValidateChangesInfoEmptyChangeTypeError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "change type cannot be empty", err.Error())
+	tests.AssertEqualValues(t, "error validating changelog info due to: change type cannot be empty", err.Error())
 }
 
 func TestUpgradeChangeLogValidateChangesInfoHashError(t *testing.T) {
@@ -240,7 +240,7 @@ func TestUpgradeChangeLogValidateChangesInfoHashError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "hash string must have at least 7 characters", err.Error())
+	tests.AssertEqualValues(t, "error validating changelog info due to: hash string must have at least 7 characters", err.Error())
 }
 
 func TestUpgradeChangeLogValidateChangesInfoEmptyMessageError(t *testing.T) {
@@ -251,7 +251,7 @@ func TestUpgradeChangeLogValidateChangesInfoEmptyMessageError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "message cannot be empty", err.Error())
+	tests.AssertEqualValues(t, "error validating changelog info due to: message cannot be empty", err.Error())
 }
 
 func TestUpgradeChangeLogValidateChangesInfoEmptyCurrentVersionError(t *testing.T) {
@@ -262,7 +262,7 @@ func TestUpgradeChangeLogValidateChangesInfoEmptyCurrentVersionError(t *testing.
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "current version cannot be empty", err.Error())
+	tests.AssertEqualValues(t, "error validating changelog info due to: current version cannot be empty", err.Error())
 }
 
 func TestUpgradeChangeLogValidateChangesInfoEmptyNewVersionError(t *testing.T) {
@@ -279,7 +279,7 @@ func TestUpgradeChangeLogValidateChangesInfoEmptyNewVersionError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "new version cannot be empty", err.Error())
+	tests.AssertEqualValues(t, "error validating changelog info due to: new version cannot be empty", err.Error())
 }
 
 func TestUpgradeChangeLogMessageNotFoundError(t *testing.T) {
@@ -297,7 +297,7 @@ func TestUpgradeChangeLogMessageNotFoundError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "message not found", err.Error())
+	tests.AssertEqualValues(t, "error while formatting changelog content due to: prettify commit message error: error while getting message due to: message not found", err.Error())
 }
 
 func TestUpgradeChangeLogTagMessageNotFoundEmptyError(t *testing.T) {
@@ -315,7 +315,7 @@ func TestUpgradeChangeLogTagMessageNotFoundEmptyError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "message not found", err.Error())
+	tests.AssertEqualValues(t, "error while formatting changelog content due to: prettify commit message error: error while getting message due to: message not found", err.Error())
 }
 
 func TestUpgradeChangeLogTagMessageNotFoundError(t *testing.T) {
@@ -333,7 +333,7 @@ func TestUpgradeChangeLogTagMessageNotFoundError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "commit message has no tag 'message:'", err.Error())
+	tests.AssertEqualValues(t, "error while formatting changelog content due to: prettify commit message error: commit message has no tag 'message:'", err.Error())
 }
 
 func TestUpgradeChangeLogOpenFileError(t *testing.T) {
@@ -351,7 +351,7 @@ func TestUpgradeChangeLogOpenFileError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "error while openning changelog file due to: open mock/CHANGELOG.md: no such file or directory", err.Error())
+	tests.AssertEqualValues(t, "error while openning changelog file due to: error while oppening file due to: open mock/CHANGELOG.md: no such file or directory", err.Error())
 }
 
 func TestUpgradeChangeLogWriteFileError(t *testing.T) {
@@ -373,5 +373,5 @@ func TestUpgradeChangeLogWriteFileError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "mock/test/CHANGELOG_404.md", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "\n\nerror while writing mock/CHANGELOG_MOCK.md file with new version 1.1.0 due to: open mock/test/CHANGELOG_404.md: no such file or directory", err.Error())
+	tests.AssertEqualValues(t, "error while writing new version to changelog file due to: error while writing file mock/test/CHANGELOG_404.md due to: open mock/test/CHANGELOG_404.md: no such file or directory", err.Error())
 }

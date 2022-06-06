@@ -46,7 +46,7 @@ semantic-release:
     before_script: 
         - docker pull registry.com/dataplatform/semantic-release:latest
     script:
-        - docker run registry.com/dataplatform/semantic-release:latest up -git-host ${CI_SERVER_HOST} -git-group datapirates -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
+        - docker run registry.com/dataplatform/semantic-release:latest up -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
 
 ```
 
