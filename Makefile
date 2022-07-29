@@ -11,7 +11,7 @@ appvol=$(wd):/app
 run=docker run --rm -v $(appvol) -v $(cachevol) $(imgdev)
 runbuild=docker run --rm -ti -e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=amd64 -v $(appvol) -v $(cachevol) $(imgdev)
 runcompose=docker-compose run --rm 
-composeup=docker-compose up -d
+composeup=docker-compose up -d --no-recreate
 cov=coverage.out
 covhtml=coverage.html
 git_group_test=dataplatform
@@ -65,7 +65,7 @@ gitlab-inspect:
 	docker inspect ${gitlab_container_name}
 
 gitlab-backup:
-	cd hack && && ./gitlab-backup.sh create ${gitlab_container_name}
+	cd hack &&./gitlab-backup.sh create ${gitlab_container_name}
 
 gitlab-restore:
 	cd hack && ./gitlab-backup.sh restore ${gitlab_container_name}
