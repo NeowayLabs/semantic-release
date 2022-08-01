@@ -19,6 +19,8 @@ var (
 	noTagsProject          = fmt.Sprintf("https://%s/dataplatform/no-tags-project.git", host)
 	protectedBranchProject = fmt.Sprintf("https://%s/dataplatform/protected-branch-project.git", host)
 	protectedTagProject    = fmt.Sprintf("https://%s/dataplatform/protected-tag-project.git", host)
+	alphaTagProject        = fmt.Sprintf("https://%s/dataplatform/alpha-tag-project.git", host)
+	alphaNumericTagProject = fmt.Sprintf("https://%s/dataplatform/alpha-numeric-tag-project.git", host)
 )
 
 func TestNewGitNoError(t *testing.T) {
@@ -286,5 +288,29 @@ func TestNewGitUpgradeRemoteRepositoryPushToProtectedBranchError(t *testing.T) {
 	err = repo.UpgradeRemoteRepository(newVersion)
 	tests.AssertError(t, err)
 	tests.AssertEqualValues(t, "error during push operation due to: command error on refs/heads/main: pre-receive hook declined", err.Error())
+	f.cleanLocalRepo(t)
+}
+
+func TestNewGitGetCurrentVersionFromRepoWithAlphaCharacteres(t *testing.T) {
+	f := getValidSetup()
+	f.gitLabVersioning.url = alphaTagProject
+	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "alpha-tag-project")
+	repo, err := f.newGitService()
+	tests.AssertNoError(t, err)
+
+	currentVersion := repo.GetCurrentVersion()
+	tests.AssertEqualValues(t, "0.0.0", currentVersion)
+	f.cleanLocalRepo(t)
+}
+
+func TestNewGitGetCurrentVersionFromRepoWithAlphaAndNumericCharacteres(t *testing.T) {
+	f := getValidSetup()
+	f.gitLabVersioning.url = alphaNumericTagProject
+	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "alpha-numeric-tag-project")
+	repo, err := f.newGitService()
+	tests.AssertNoError(t, err)
+
+	currentVersion := repo.GetCurrentVersion()
+	tests.AssertEqualValues(t, "1.0.1", currentVersion)
 	f.cleanLocalRepo(t)
 }

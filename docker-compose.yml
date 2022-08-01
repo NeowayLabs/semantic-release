@@ -13,12 +13,12 @@ services:
       restart: always
       environment:
         GITLAB_OMNIBUS_CONFIG: |
-          external_url 'https://gitlab.com';        
-          gitlab_rails['initial_root_password'] = "password";   
+          external_url 'https://gitlab.com';
+          gitlab_rails['initial_root_password'] = "password";
           # the default root username is 'root'
           # Add any other gitlab.rb configuration here, each on its own line
       ports:
         - '80'
         - '443:443'
         - '22'
-      shm_size: '256m'
+      shm_size: '512m'

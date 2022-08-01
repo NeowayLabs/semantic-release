@@ -228,10 +228,9 @@ func (g *GitVersioning) getMostRecentTag() (string, error) {
 
 		tagOnlyNumbers := strings.ReplaceAll(tag, ".", "")
 		tagInt, err := strconv.Atoi(tagOnlyNumbers)
-		if err != nil {
-			return "", fmt.Errorf("could not convert %v to int", tagOnlyNumbers)
+		if err == nil {
+			mapTags[tagInt] = tag
 		}
-		mapTags[tagInt] = tag
 	}
 
 	result := ""
@@ -241,6 +240,10 @@ func (g *GitVersioning) getMostRecentTag() (string, error) {
 			previous = key
 			result = element
 		}
+	}
+
+	if result == "" {
+		return "0.0.0", nil
 	}
 
 	return result, nil

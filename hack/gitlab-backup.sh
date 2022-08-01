@@ -2,7 +2,7 @@
 MX_ATTEMPTS=50
 ATTEMPTS=1
 SUCCESS=0
-BACKUP_FILE="1652372785_2022_05_12_14.9.2-ee_gitlab_backup.tar"
+BACKUP_FILE="1659120630_2022_07_29_14.9.2-ee_gitlab_backup.tar"
 GITLAB_CONTAINER="$2"
 COMMAND="$1"
 
@@ -30,9 +30,9 @@ function run_command() {
                 echo -ne "\ncopy backup to gitlab container"
                 docker cp ../srv/gitlab/backups/$BACKUP_FILE $GITLAB_CONTAINER:/var/opt/gitlab/backups/$BACKUP_FILE
                 echo -ne "\nrestore gitlab backup"
-                docker exec -t $GITLAB_CONTAINER gitlab-backup restore BACKUP=1652372785_2022_05_12_14.9.2-ee force=yes
+                docker exec -t $GITLAB_CONTAINER gitlab-backup restore BACKUP=1659120630_2022_07_29_14.9.2-ee force=yes
                 echo -ne "\nRestarting gitlab container..."
-                docker restart $GITLAB_CONTAINER
+                docker restart -t 15 $GITLAB_CONTAINER
                 # docker exec -it  $GITLAB_CONTAINER gitlab-rake gitlab:check SANITIZE=true
                 SUCCESS=1
                 sleep 120
