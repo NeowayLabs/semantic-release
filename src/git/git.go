@@ -26,6 +26,7 @@ type Logger interface {
 	Info(s string, args ...interface{})
 	Error(s string, args ...interface{})
 	Warn(s string, args ...interface{})
+	Debug(s string, args ...interface{})
 }
 
 type GitMethods struct {
@@ -163,6 +164,10 @@ func (g *GitVersioning) getCommitHistory() ([]*object.Commit, error) {
 	return commits, nil
 }
 
+func (g *GitVersioning) isTimeAfter(timeToCheck, referenceTime time.Time) bool {
+	return timeToCheck.After(referenceTime)
+}
+
 func (g *GitVersioning) getMostRecentCommit() (CommitInfo, error) {
 
 	if len(g.commitHistory) == 0 {
@@ -170,13 +175,16 @@ func (g *GitVersioning) getMostRecentCommit() (CommitInfo, error) {
 	}
 
 	recentCommit := g.commitHistory[0]
-	for i, commit := range g.commitHistory {
-		if i > 0 {
-			if commit.Author.When.After(g.commitHistory[i-1].Author.When) {
-				recentCommit = commit
-			}
+	for _, commit := range g.commitHistory {
+		if g.isTimeAfter(commit.Author.When, recentCommit.Author.When) {
+			recentCommit = commit
 		}
 	}
+
+	g.log.Debug("Most recent commit Author Name: ", recentCommit.Author.Name)
+	g.log.Debug("Most recent commit Author Email: ", recentCommit.Author.Email)
+	g.log.Debug("Most recent commit Message: ", recentCommit.Message)
+	g.log.Debug("Most recent commit Time: ", recentCommit.Author.When)
 
 	result := CommitInfo{
 		Hash:        recentCommit.Hash.String(),
