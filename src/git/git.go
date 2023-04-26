@@ -16,10 +16,11 @@ import (
 )
 
 const (
-	colorCyan   = "\033[36m"
-	colorYellow = "\033[33m"
-	colorReset  = "\033[0m"
-	colorGreen  = "\033[32m"
+	colorCyan            = "\033[36m"
+	colorYellow          = "\033[33m"
+	colorReset           = "\033[0m"
+	colorGreen           = "\033[32m"
+	lengthOnlyNumbersTag = 3
 )
 
 type Logger interface {
@@ -237,7 +238,9 @@ func (g *GitVersioning) getMostRecentTag() (string, error) {
 		tagOnlyNumbers := strings.ReplaceAll(tag, ".", "")
 		tagInt, err := strconv.Atoi(tagOnlyNumbers)
 		if err == nil {
-			mapTags[tagInt] = tag
+			if len(tagOnlyNumbers) == lengthOnlyNumbersTag {
+				mapTags[tagInt] = tag
+			}
 		}
 	}
 
