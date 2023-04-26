@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -16,12 +17,13 @@ import (
 )
 
 const (
-	colorCyan            = "\033[36m"
-	colorYellow          = "\033[33m"
-	colorReset           = "\033[0m"
-	colorGreen           = "\033[32m"
-	lengthOnlyNumbersTag = 3
+	colorCyan   = "\033[36m"
+	colorYellow = "\033[33m"
+	colorReset  = "\033[0m"
+	colorGreen  = "\033[32m"
 )
+
+var pattern = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
 
 type Logger interface {
 	Info(s string, args ...interface{})
@@ -235,12 +237,9 @@ func (g *GitVersioning) getMostRecentTag() (string, error) {
 	for _, currentTag := range g.tagsList {
 		tag := strings.TrimSpace(strings.Replace(currentTag.Name, "refs/tags/", "", 1))
 
-		tagOnlyNumbers := strings.ReplaceAll(tag, ".", "")
-		tagInt, err := strconv.Atoi(tagOnlyNumbers)
-		if err == nil {
-			if len(tagOnlyNumbers) == lengthOnlyNumbersTag {
-				mapTags[tagInt] = tag
-			}
+		if pattern.MatchString(tag) {
+			tagInt, _ := strconv.Atoi(strings.ReplaceAll(tag, ".", ""))
+			mapTags[tagInt] = tag
 		}
 	}
 
