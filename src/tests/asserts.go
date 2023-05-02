@@ -28,6 +28,15 @@ func AssertEqualValues(t *testing.T, expected, actual interface{}) {
 	}
 }
 
+func AssertDiffValues(t *testing.T, expected, actual interface{}) {
+	t.Helper()
+	if expected == actual {
+		t.Errorf("Not different: \n"+
+			"expected: %v\n"+
+			"actual  : %v", expected, actual)
+	}
+}
+
 func AssertEmpty(t *testing.T, actual interface{}) {
 	t.Helper()
 	actualType := reflect.TypeOf(actual).Name()

@@ -220,6 +220,8 @@ func TestNewGitUpgradeRemoteRepositoryNoError(t *testing.T) {
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
 
+	branchHead := repo.BranchHead()
+
 	currentVersion := repo.GetCurrentVersion()
 
 	newVersion := newValidVersion(t, currentVersion)
@@ -227,7 +229,9 @@ func TestNewGitUpgradeRemoteRepositoryNoError(t *testing.T) {
 
 	// push the tag once
 	err = repo.UpgradeRemoteRepository(newVersion)
+	newBranchHead := repo.BranchHead()
 	tests.AssertNoError(t, err)
+	tests.AssertDiffValues(t, branchHead, newBranchHead)
 	f.cleanLocalRepo(t)
 
 	repo, err = f.newGitService()
