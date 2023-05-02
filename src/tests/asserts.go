@@ -59,7 +59,7 @@ func AssertTrue(t *testing.T, actual bool) {
 	}
 }
 
-func AssertFrue(t *testing.T, actual bool) {
+func AssertFalse(t *testing.T, actual bool) {
 	t.Helper()
 	if actual {
 		t.Errorf("Should be false")

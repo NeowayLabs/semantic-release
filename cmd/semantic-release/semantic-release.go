@@ -24,7 +24,7 @@ const (
 
 var (
 	// version is set at build time
-	Version  = "1.0.0"
+	Version  = "No version provided at build time"
 	homePath = os.Getenv("HOME")
 )
 
@@ -98,10 +98,10 @@ type UpgradeFile struct {
 	VariableName    string
 }
 
-func addFilesToUpgradeList(upgradePyFile *bool, reposioryRootPath string) UpgradeFiles {
+func addFilesToUpgradeList(upgradePyFile *bool, repositoryRootPath string) UpgradeFiles {
 	upgradeFilesList := UpgradeFiles{}
 	if *upgradePyFile {
-		upgradeFilesList.Files = append(upgradeFilesList.Files, UpgradeFile{Path: fmt.Sprintf("%s/setup.py", reposioryRootPath), DestinationPath: "", VariableName: "__version__"})
+		upgradeFilesList.Files = append(upgradeFilesList.Files, UpgradeFile{Path: fmt.Sprintf("%s/setup.py", repositoryRootPath), DestinationPath: "", VariableName: "__version__"})
 	}
 
 	return upgradeFilesList
@@ -181,17 +181,17 @@ func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, grou
 	validateIncomingParams(logger, upgradeVersionCmd, gitHost, groupName, projectName, username, password, upgradePyFile)
 
 	timer := time.New(logger)
-	reposioryRootPath := fmt.Sprintf("%s/%s", homePath, *projectName)
+	repositoryRootPath := fmt.Sprintf("%s/%s", homePath, *projectName)
 
 	url := fmt.Sprintf("https://%s:%s@%s/%s/%s.git", *username, *password, *gitHost, *groupName, *projectName)
-	repoVersionControl, err := git.New(logger, timer.PrintElapsedTime, url, *username, *password, reposioryRootPath)
+	repoVersionControl, err := git.New(logger, timer.PrintElapsedTime, url, *username, *password, repositoryRootPath)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
 
-	filesVersionControl := files.New(logger, timer.PrintElapsedTime, *gitHost, reposioryRootPath, *groupName, *projectName)
+	filesVersionControl := files.New(logger, timer.PrintElapsedTime, *gitHost, repositoryRootPath, *groupName, *projectName)
 
 	versionControl := v.NewVersionControl(logger, timer.PrintElapsedTime)
 
-	return semantic.New(logger, reposioryRootPath, addFilesToUpgradeList(upgradePyFile, reposioryRootPath), repoVersionControl, filesVersionControl, versionControl)
+	return semantic.New(logger, repositoryRootPath, addFilesToUpgradeList(upgradePyFile, repositoryRootPath), repoVersionControl, filesVersionControl, versionControl)
 }

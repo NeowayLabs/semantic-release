@@ -19,6 +19,7 @@ git_project_test=integration-tests
 git_host_test=localhost
 gitlab_container_name=gitlab_integration_tests
 run_local=./cmd/semantic-release/semantic-release
+backup_file=1682719876_2023_04_28_14.9.2-ee_gitlab_backup.tar
 
 all: check build
 
@@ -65,10 +66,10 @@ gitlab-inspect:
 	docker inspect ${gitlab_container_name}
 
 gitlab-backup:
-	cd hack &&./gitlab-backup.sh create ${gitlab_container_name}
+	cd hack &&./gitlab-backup.sh create ${gitlab_container_name} ${backup_file}
 
 gitlab-restore:
-	cd hack && ./gitlab-backup.sh restore ${gitlab_container_name}
+	cd hack && ./gitlab-backup.sh restore ${gitlab_container_name} ${backup_file}
 
 env: ##@environment Create gitlab container.
 	 GITLAB_CONTAINER_NAME=${gitlab_container_name} ${composeup} gitlab

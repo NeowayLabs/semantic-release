@@ -14,13 +14,14 @@ import (
 
 var (
 	// These projects have been set previously with a backup which was restored with gitlab after docker compose up.
-	// Learn more at `make start-gitlab-env` on the Makefile
-	noBranchProject        = fmt.Sprintf("https://%s/dataplatform/no-branch-project.git", host)
-	noTagsProject          = fmt.Sprintf("https://%s/dataplatform/no-tags-project.git", host)
-	protectedBranchProject = fmt.Sprintf("https://%s/dataplatform/protected-branch-project.git", host)
-	protectedTagProject    = fmt.Sprintf("https://%s/dataplatform/protected-tag-project.git", host)
-	alphaTagProject        = fmt.Sprintf("https://%s/dataplatform/alpha-tag-project.git", host)
-	alphaNumericTagProject = fmt.Sprintf("https://%s/dataplatform/alpha-numeric-tag-project.git", host)
+	// Learn more at `make start-env` on the Makefile
+	noBranchProject         = fmt.Sprintf("https://%s/dataplatform/no-branch-project.git", host)
+	noTagsProject           = fmt.Sprintf("https://%s/dataplatform/no-tags-project.git", host)
+	protectedBranchProject  = fmt.Sprintf("https://%s/dataplatform/protected-branch-project.git", host)
+	protectedTagProject     = fmt.Sprintf("https://%s/dataplatform/protected-tag-project.git", host)
+	alphaTagProject         = fmt.Sprintf("https://%s/dataplatform/alpha-tag-project.git", host)
+	alphaNumericTagProject  = fmt.Sprintf("https://%s/dataplatform/alpha-numeric-tag-project.git", host)
+	tagsOutOfPatternProject = fmt.Sprintf("https://%s/dataplatform/tags-out-of-pattern-project.git", host)
 )
 
 func TestNewGitNoError(t *testing.T) {
@@ -312,5 +313,18 @@ func TestNewGitGetCurrentVersionFromRepoWithAlphaAndNumericCharacteres(t *testin
 
 	currentVersion := repo.GetCurrentVersion()
 	tests.AssertEqualValues(t, "1.0.1", currentVersion)
+	f.cleanLocalRepo(t)
+}
+
+func TestNewGitGetCurrentVersionFromRepoWithTagsOutOfPattern(t *testing.T) {
+	f := getValidSetup()
+	f.gitLabVersioning.url = tagsOutOfPatternProject
+	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "tags-out-of-pattern-project")
+	repo, err := f.newGitService()
+	tests.AssertNoError(t, err)
+
+	result, err := repo.GetMostRecentTag()
+	tests.AssertNil(t, err)
+	tests.AssertEqualValues(t, "2.1.0", result)
 	f.cleanLocalRepo(t)
 }
