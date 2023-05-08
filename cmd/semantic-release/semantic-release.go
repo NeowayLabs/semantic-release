@@ -53,7 +53,11 @@ func main() {
 
 	upgradeVersionCmd.Parse(os.Args[2:])
 
-	logger, err := log.New(serviceName, "", *logLevel)
+	if Version == "No version provided at build time" {
+		Version = ""
+	}
+
+	logger, err := log.New(serviceName, Version, *logLevel)
 	if err != nil {
 		os.Exit(1)
 	}
