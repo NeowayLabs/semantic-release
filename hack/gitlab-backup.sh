@@ -2,7 +2,8 @@
 MX_ATTEMPTS=50
 ATTEMPTS=1
 SUCCESS=0
-BACKUP_FILE="1659120630_2022_07_29_14.9.2-ee_gitlab_backup.tar"
+BACKUP_FILE="$3"
+BACKUP=${BACKUP_FILE:0:31}
 GITLAB_CONTAINER="$2"
 COMMAND="$1"
 
@@ -12,7 +13,14 @@ function run_command() {
         if [[ $COMMAND == "create" ]];then 
             echo -ne "\ngitlab data backup in progress..."
             docker exec -t $GITLAB_CONTAINER gitlab-backup create
-            # docker cp $GITLAB_CONTAINER:/var/opt/gitlab/backups $HOME/
+            cd ../srv/gitlab/
+            rm -r backups/
+            docker cp $GITLAB_CONTAINER:/var/opt/gitlab/backups .
+            NEW_BACKUP=$(ls -t backups/ | head -1)
+            chmod a+rwx backups/$NEW_BACKUP
+            cd ../..
+            sed -i "s/$BACKUP_FILE/$NEW_BACKUP/1" Makefile
+            cd hack/
             SUCCESS=1
         fi
 
@@ -30,7 +38,7 @@ function run_command() {
                 echo -ne "\ncopy backup to gitlab container"
                 docker cp ../srv/gitlab/backups/$BACKUP_FILE $GITLAB_CONTAINER:/var/opt/gitlab/backups/$BACKUP_FILE
                 echo -ne "\nrestore gitlab backup"
-                docker exec -t $GITLAB_CONTAINER gitlab-backup restore BACKUP=1659120630_2022_07_29_14.9.2-ee force=yes
+                docker exec -t $GITLAB_CONTAINER gitlab-backup restore BACKUP=$BACKUP force=yes
                 echo -ne "\nRestarting gitlab container..."
                 docker restart -t 15 $GITLAB_CONTAINER
                 # docker exec -it  $GITLAB_CONTAINER gitlab-rake gitlab:check SANITIZE=true

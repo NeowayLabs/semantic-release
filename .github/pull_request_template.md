@@ -40,4 +40,5 @@ Here you give a little more detail on the implementation or justify any unorthod
 - [ ] I have made corresponding changes to the documentation
 - [ ] The changes generate no new warnings
 - [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
+- [ ] New and/or existing unit tests pass locally with my changes
+- [ ] New and/or existing integration tests pass locally with my changes

@@ -109,6 +109,39 @@ message: Added new function to print the Fibonacci sequece.
 - type: [skip v]
 - type: [skip versioning]
 
+## Adding new tests
+
+Add new integration tests if you make a change that needs to interact with a repository. Here are the steps you need to follow to add further integration tests:
+
+1. Run:
+
+```
+make env
+```
+
+This will run a container with a full GitLab. Wait for GitLab to be accessible through the browser.
+
+Address: https://localhost:443
+
+2. Run:
+
+```
+make gitlab-restore
+```
+
+This will restore all GitLab repos. After GitLab is accessible again, log in and create the new test scenario.
+
+user: root
+password: password
+
+3. Run:
+
+```
+make gitlab-backup
+```
+
+This will create a new backup with all the changes you implemented. A new file will be added to `srv/gitlab/backups`. Remember to add this new file in a commit and in the MR to able versioning.
+
 ## Testing
 
 Run:

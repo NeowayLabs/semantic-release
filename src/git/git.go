@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +22,8 @@ const (
 	colorReset  = "\033[0m"
 	colorGreen  = "\033[32m"
 )
+
+var pattern = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
 
 type Logger interface {
 	Info(s string, args ...interface{})
@@ -234,9 +237,8 @@ func (g *GitVersioning) getMostRecentTag() (string, error) {
 	for _, currentTag := range g.tagsList {
 		tag := strings.TrimSpace(strings.Replace(currentTag.Name, "refs/tags/", "", 1))
 
-		tagOnlyNumbers := strings.ReplaceAll(tag, ".", "")
-		tagInt, err := strconv.Atoi(tagOnlyNumbers)
-		if err == nil {
+		if pattern.MatchString(tag) {
+			tagInt, _ := strconv.Atoi(strings.ReplaceAll(tag, ".", ""))
 			mapTags[tagInt] = tag
 		}
 	}
@@ -338,6 +340,10 @@ func (g *GitVersioning) setTag(tag string) error {
 	}
 
 	g.log.Info("Creating tag %s", tag)
+	err = g.setBranchHead()
+	if err != nil {
+		return err
+	}
 	_, err = g.repo.CreateTag(tag, g.branchHead.Hash(), &git.CreateTagOptions{
 		Tagger: &object.Signature{
 			Name:  g.mostRecentCommit.AuthorName,
@@ -399,12 +405,20 @@ func (g *GitVersioning) cloneRepoToDirectory() (*git.Repository, error) {
 	return nil, err
 }
 
-func (g *GitVersioning) initialize() error {
+func (g *GitVersioning) setBranchHead() error {
 	branchHead, err := g.git.getBranchPointedToHead()
 	if err != nil {
 		return fmt.Errorf("error while retrieving the branch pointed to HEAD due to: %w", err)
 	}
 	g.branchHead = branchHead
+	return nil
+}
+
+func (g *GitVersioning) initialize() error {
+	err := g.setBranchHead()
+	if err != nil {
+		return err
+	}
 
 	commitHistory, err := g.git.getCommitHistory()
 	if err != nil {
