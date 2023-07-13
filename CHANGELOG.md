@@ -1,5 +1,6 @@
 v1.0.4
  - Fix versioning problem (@lucas.oliveira)
+ - Changed `gitlab-backup.sh` to keep all backups (@lucas.oliveira)
 
 v1.0.3
  - Fix only numbers tag bug. (@lucas.oliveira)
