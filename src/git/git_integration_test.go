@@ -22,6 +22,7 @@ var (
 	alphaTagProject         = fmt.Sprintf("https://%s/dataplatform/alpha-tag-project.git", host)
 	alphaNumericTagProject  = fmt.Sprintf("https://%s/dataplatform/alpha-numeric-tag-project.git", host)
 	tagsOutOfPatternProject = fmt.Sprintf("https://%s/dataplatform/tags-out-of-pattern-project.git", host)
+	greatNumbersTagProject  = fmt.Sprintf("https://%s/dataplatform/great-numbers-tag-project.git", host)
 )
 
 func TestNewGitNoError(t *testing.T) {
@@ -330,5 +331,18 @@ func TestNewGitGetCurrentVersionFromRepoWithTagsOutOfPattern(t *testing.T) {
 	result, err := repo.GetMostRecentTag()
 	tests.AssertNil(t, err)
 	tests.AssertEqualValues(t, "2.1.0", result)
+	f.cleanLocalRepo(t)
+}
+
+func TestNewGitGetCurrentVersionFromRepoWithGreatNumbersTag(t *testing.T) {
+	f := getValidSetup()
+	f.gitLabVersioning.url = greatNumbersTagProject
+	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "great-numbers-tag-project")
+	repo, err := f.newGitService()
+	tests.AssertNoError(t, err)
+
+	result, err := repo.GetMostRecentTag()
+	tests.AssertNil(t, err)
+	tests.AssertEqualValues(t, "3.0.2", result)
 	f.cleanLocalRepo(t)
 }

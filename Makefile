@@ -19,7 +19,7 @@ git_project_test=integration-tests
 git_host_test=localhost
 gitlab_container_name=gitlab_integration_tests
 run_local=./cmd/semantic-release/semantic-release
-backup_file=1682719876_2023_04_28_14.9.2-ee_gitlab_backup.tar
+backup_file=1689288217_2023_07_13_14.9.2-ee_gitlab_backup.tar
 
 all: check build
 
