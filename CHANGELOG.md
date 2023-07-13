@@ -1,3 +1,6 @@
+v1.0.4
+ - Fix versioning problem (@lucas.oliveira)
+
 v1.0.3
  - Fix only numbers tag bug. (@lucas.oliveira)
  - Add version to log. (@lucas.oliveira)
