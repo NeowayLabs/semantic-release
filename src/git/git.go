@@ -71,6 +71,12 @@ type CommitInfo struct {
 	Message     string
 }
 
+type Version struct {
+	Major int
+	Minor int
+	Patch int
+}
+
 func (g *GitVersioning) validate() error {
 	if g.url == "" {
 		return errors.New("url cannot be empty")
@@ -232,23 +238,23 @@ func (g *GitVersioning) getMostRecentTag() (string, error) {
 		return "0.0.0", nil
 	}
 
-	mapTags := make(map[int]string)
+	mapTags := make(map[*Version]string)
 
 	for _, currentTag := range g.tagsList {
 		tag := strings.TrimSpace(strings.Replace(currentTag.Name, "refs/tags/", "", 1))
 
 		if pattern.MatchString(tag) {
-			tagInt, _ := strconv.Atoi(strings.ReplaceAll(tag, ".", ""))
-			mapTags[tagInt] = tag
+			version := newVersion(tag)
+			mapTags[version] = tag
 		}
 	}
 
-	result := ""
-	previous := 0
-	for key, element := range mapTags {
-		if key > previous {
-			previous = key
-			result = element
+	var latest *Version
+	var result string
+	for version, tag := range mapTags {
+		if latest == nil || version.isGreaterThan(latest) {
+			latest = version
+			result = tag
 		}
 	}
 
@@ -445,6 +451,29 @@ func (g *GitVersioning) initialize() error {
 	g.mostRecentTag = mostRecentTag
 
 	return nil
+}
+
+func newVersion(tag string) *Version {
+	segments := strings.Split(tag, ".")
+	major, _ := strconv.Atoi(segments[0])
+	minor, _ := strconv.Atoi(segments[1])
+	patch, _ := strconv.Atoi(segments[2])
+
+	return &Version{
+		Major: major,
+		Minor: minor,
+		Patch: patch,
+	}
+}
+
+func (v *Version) isGreaterThan(other *Version) bool {
+	if v.Major != other.Major {
+		return v.Major > other.Major
+	}
+	if v.Minor != other.Minor {
+		return v.Minor > other.Minor
+	}
+	return v.Patch > other.Patch
 }
 
 func New(log Logger, printElapsedTime ElapsedTime, url, username, password, destinationDirectory string) (*GitVersioning, error) {
