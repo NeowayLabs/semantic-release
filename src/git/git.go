@@ -250,19 +250,16 @@ func (g *GitVersioning) getMostRecentTag() (string, error) {
 	}
 
 	var latest *Version
-	var result string
+	var latestTag string
 	for version, tag := range mapTags {
-		if latest == nil || version.isGreaterThan(latest) {
-			latest = version
-			result = tag
-		}
+		latest, latestTag = isSetNewVersion(latest, version, tag)
 	}
 
-	if result == "" {
+	if latestTag == "" {
 		return "0.0.0", nil
 	}
 
-	return result, nil
+	return latestTag, nil
 }
 
 func (g *GitVersioning) addToStage() error {
@@ -464,6 +461,13 @@ func newVersion(tag string) *Version {
 		Minor: minor,
 		Patch: patch,
 	}
+}
+
+func isSetNewVersion(latest, version *Version, tag string) (*Version, string) {
+	if latest == nil || version.isGreaterThan(latest) {
+		return version, tag
+	}
+	return latest, ""
 }
 
 func (v *Version) isGreaterThan(other *Version) bool {
