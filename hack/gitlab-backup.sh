@@ -13,14 +13,14 @@ function run_command() {
         if [[ $COMMAND == "create" ]];then 
             echo -ne "\ngitlab data backup in progress..."
             docker exec -t $GITLAB_CONTAINER gitlab-backup create
+            NEW_BACKUP=$(docker exec -t $GITLAB_CONTAINER sh -c "ls -t /var/opt/gitlab/backups/ | head -1" | tr -d '\r')
             cd ../srv/gitlab/
-            rm -r backups/
-            docker cp $GITLAB_CONTAINER:/var/opt/gitlab/backups .
-            NEW_BACKUP=$(ls -t backups/ | head -1)
+            docker cp $GITLAB_CONTAINER:/var/opt/gitlab/backups/$NEW_BACKUP backups/
             chmod a+rwx backups/$NEW_BACKUP
             cd ../..
             sed -i "s/$BACKUP_FILE/$NEW_BACKUP/1" Makefile
             cd hack/
+            rm curl
             SUCCESS=1
         fi
 
