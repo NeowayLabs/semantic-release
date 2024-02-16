@@ -44,6 +44,8 @@ func main() {
 	username := upgradeVersionCmd.String("username", "", "Git username. (required)")
 	password := upgradeVersionCmd.String("password", "", "Git password. (required)")
 	logLevel := upgradeVersionCmd.String("log-level", "debug", "Log level.")
+	var useChangelogFile bool
+	upgradeVersionCmd.BoolVar(&useChangelogFile, "changelog", false, "Use changelog file to generate input version. (default false)")
 
 	if len(os.Args) < 2 {
 		printWelcomeMessage()
@@ -67,7 +69,7 @@ func main() {
 	case "up":
 		logger.Info(colorYellow + "\nSemantic Version just started the process...\n\n" + colorReset)
 
-		semantic := newSemantic(logger, upgradeVersionCmd, gitHost, groupName, projectName, username, password, upgradePyFile)
+		semantic := newSemantic(logger, upgradeVersionCmd, gitHost, groupName, projectName, username, password, upgradePyFile, useChangelogFile)
 
 		if err := semantic.GenerateNewRelease(); err != nil {
 			logger.Error(err.Error())
@@ -180,7 +182,7 @@ func printCommitMessageExample() {
 	fmt.Println("\n\tNote: The maximum number of characters is 150. If the commit subject exceeds it, it will be cut, keeping only the first 150 characters.")
 }
 
-func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, username, password *string, upgradePyFile *bool) *semantic.Semantic {
+func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, username, password *string, upgradePyFile *bool, changelog bool) *semantic.Semantic {
 
 	validateIncomingParams(logger, upgradeVersionCmd, gitHost, groupName, projectName, username, password, upgradePyFile)
 
@@ -197,5 +199,5 @@ func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, grou
 
 	versionControl := v.NewVersionControl(logger, timer.PrintElapsedTime)
 
-	return semantic.New(logger, repositoryRootPath, addFilesToUpgradeList(upgradePyFile, repositoryRootPath), repoVersionControl, filesVersionControl, versionControl)
+	return semantic.New(logger, repositoryRootPath, addFilesToUpgradeList(upgradePyFile, repositoryRootPath), repoVersionControl, filesVersionControl, versionControl, changelog)
 }

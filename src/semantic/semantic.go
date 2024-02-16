@@ -24,6 +24,7 @@ type RepositoryVersionControl interface {
 	GetChangeMessage() string
 	GetCurrentVersion() string
 	UpgradeRemoteRepository(newVersion string) error
+	GetChangelogChanges() (string, error)
 }
 
 type VersionControl interface {
@@ -54,6 +55,7 @@ type Semantic struct {
 	repoVersionControl    RepositoryVersionControl
 	versionControl        VersionControl
 	filesVersionControl   FilesVersionControl
+	changelog             bool
 }
 
 func (s *Semantic) GenerateNewRelease() error {
@@ -63,6 +65,15 @@ func (s *Semantic) GenerateNewRelease() error {
 		AuthorEmail:    s.repoVersionControl.GetChangeAuthorEmail(),
 		Message:        s.repoVersionControl.GetChangeMessage(),
 		CurrentVersion: s.repoVersionControl.GetCurrentVersion(),
+	}
+
+	if s.changelog {
+		//TODO if the user pass as parameter to generate version from changelog should set changesInfo.message
+		newChangeMessage, err := s.repoVersionControl.GetChangelogChanges()
+		if err != nil {
+			return fmt.Errorf("error to get changelog message / %w", err)
+		}
+		changesInfo.Message = newChangeMessage
 	}
 
 	if s.versionControl.MustSkipVersioning(changesInfo.Message) {
@@ -110,7 +121,7 @@ func (s *Semantic) GenerateNewRelease() error {
 	return nil
 }
 
-func New(log Logger, rootPath string, filesToUpdateVariable interface{}, repoVersionControl RepositoryVersionControl, filesVersionControl FilesVersionControl, versionControl VersionControl) *Semantic {
+func New(log Logger, rootPath string, filesToUpdateVariable interface{}, repoVersionControl RepositoryVersionControl, filesVersionControl FilesVersionControl, versionControl VersionControl, changelog bool) *Semantic {
 	return &Semantic{
 		log:                   log,
 		rootPath:              rootPath,
@@ -118,5 +129,6 @@ func New(log Logger, rootPath string, filesToUpdateVariable interface{}, repoVer
 		repoVersionControl:    repoVersionControl,
 		filesVersionControl:   filesVersionControl,
 		versionControl:        versionControl,
+		changelog:             changelog,
 	}
 }

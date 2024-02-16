@@ -1,9 +1,11 @@
 package git
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -115,6 +117,49 @@ func (g *GitVersioning) GetChangeMessage() string {
 
 func (g *GitVersioning) GetCurrentVersion() string {
 	return g.mostRecentTag
+}
+
+func (g *GitVersioning) GetChangelog() (*os.File, error) {
+
+	changelog, err := os.Open(filepath.Join(g.destinationDirectory, "CHANGELOG"))
+	if err != nil {
+		return nil, fmt.Errorf("error to open file in GetChangelog / %w", err)
+	}
+
+	return changelog, nil
+}
+
+func (g *GitVersioning) GetChangelogChanges() (string, error) {
+	changelog, err := os.Open(filepath.Join(g.destinationDirectory, "CHANGELOG"))
+	if err != nil {
+		return "", err
+	}
+
+	scanner := bufio.NewScanner(changelog)
+	// optionally, resize scanner's capacity for lines over 64K, see next example
+	change := ""
+	for scanner.Scan() {
+		line := scanner.Text()
+		finishedNewChanges := "## v"
+		if strings.Contains(line, finishedNewChanges) {
+			break
+		}
+
+		if isValidChangeMessage(line) {
+			if change != "" {
+				return "", fmt.Errorf("more than one change in the release / actual change: %s / another found: %s", change, line)
+			}
+			change = line
+		}
+	}
+
+	return change, nil
+}
+
+func isValidChangeMessage(message string) bool {
+	//regex validate this message: "type: [fix], message: testing message"
+	r := regexp.MustCompile(`type:\s\[[A-Za-z0-9]+\], message:\s[A-Za-z0-9]+`)
+	return r.FindString(message) != ""
 }
 
 func (g *GitVersioning) UpgradeRemoteRepository(newVersion string) error {
