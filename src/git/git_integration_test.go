@@ -225,16 +225,11 @@ func TestNewGitUpgradeRemoteRepositoryNoError(t *testing.T) {
 	currentVersion := repo.GetCurrentVersion()
 
 	newVersion := newValidVersion(t, currentVersion)
-	fmt.Println("AAAA", currentVersion, newVersion)
 	tests.AssertNotEmpty(t, newVersion)
 
-	aa, _ := repo.GetMostRecentTag()
-	fmt.Println("MOST", aa)
-
 	// push the tag once
-	err = repo.UpgradeRemoteRepository("2.0.0")
+	err = repo.UpgradeRemoteRepository(newVersion)
 	newBranchHead := repo.BranchHead()
-	fmt.Println("AAAAAAAAAAAAAA", err)
 	tests.AssertNoError(t, err)
 	tests.AssertDiffValues(t, branchHead, newBranchHead)
 	f.cleanLocalRepo(t)

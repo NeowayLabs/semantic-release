@@ -89,15 +89,12 @@ func TestGetNewVersionPatchSuccessLot(t *testing.T) {
 	f := setup()
 	testcases := map[string]string{
 		"type:[fix]": "1.0.0",
-		"type:[fix]": "1.0.0",
 	}
-	expected := []string{
-		"1.0.1",
-	}
+	expected := "1.0.1"
 	for k, v := range testcases {
 		actualVersion, actualErr := f.versionControl.GetNewVersion(k, v)
 		tests.AssertNoError(t, actualErr)
-		tests.AssertEqualValues(t, "1.0.1", actualVersion)
+		tests.AssertEqualValues(t, expected, actualVersion)
 	}
 
 }

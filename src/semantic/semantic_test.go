@@ -43,6 +43,11 @@ func (r *RepositoryVersionControlMock) UpgradeRemoteRepository(newVersion string
 	return r.errUpgradeRemoteRepo
 }
 
+func (r *RepositoryVersionControlMock) GetChangelogChanges() (string, error) {
+	change := ""
+	return change, nil
+}
+
 type VersionControlMock struct {
 	newVersion          string
 	errGetNewVersion    error
@@ -92,8 +97,8 @@ func (f *fixture) NewSemantic() *semantic.Semantic {
 	if err != nil {
 		errors.New("error while getting new log")
 	}
-
-	return semantic.New(logger, f.rootPath, f.filesToUpdateVariable, f.repoVersionMock, f.filesVersionMock, f.versionControlMock)
+	useChangelog := false
+	return semantic.New(logger, f.rootPath, f.filesToUpdateVariable, f.repoVersionMock, f.filesVersionMock, f.versionControlMock, useChangelog)
 }
 
 type upgradeFilesMock struct {
