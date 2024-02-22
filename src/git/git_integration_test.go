@@ -23,6 +23,7 @@ var (
 	alphaNumericTagProject  = fmt.Sprintf("https://%s/dataplatform/alpha-numeric-tag-project.git", host)
 	tagsOutOfPatternProject = fmt.Sprintf("https://%s/dataplatform/tags-out-of-pattern-project.git", host)
 	greatNumbersTagProject  = fmt.Sprintf("https://%s/dataplatform/great-numbers-tag-project.git", host)
+	disorderedTagsProject   = fmt.Sprintf("https://%s/dataplatform/disordered-tags-prject.git", host)
 )
 
 func TestNewGitNoError(t *testing.T) {
@@ -47,7 +48,7 @@ func TestNewGitRepositoryAlreadyClonedNoError(t *testing.T) {
 func TestNewGitRepositoryNotFound(t *testing.T) {
 	f := setup()
 	f.gitLabVersioning.url = "any"
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-set-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("no-set-project")
 	f.gitLabVersioning.username = "root"
 	f.gitLabVersioning.password = "password"
 	_, err := f.newGitService()
@@ -58,7 +59,7 @@ func TestNewGitRepositoryNotFound(t *testing.T) {
 func TestNewGitEmptyRepositoryError(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = noBranchProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-branch-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("no-branch-project")
 	_, err := f.newGitService()
 	tests.AssertError(t, err)
 	tests.AssertEqualValues(t, "error while initiating git package due to : remote repository is empty", err.Error())
@@ -117,7 +118,7 @@ func TestNewGitCommitGetCurrentVersionNoError(t *testing.T) {
 func TestNewGitUpgradeRemoteRepositoryAddChangesError(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = noTagsProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("no-tags-project")
 	f.gitFunctions.errAddToStage = errors.New("no changes to add")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
@@ -137,7 +138,7 @@ func TestNewGitUpgradeRemoteRepositoryAddChangesError(t *testing.T) {
 func TestNewGitUpgradeRemoteRepositoryCommitChangesError(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = noTagsProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("no-tags-project")
 	f.gitFunctions.errCommitChanges = errors.New("commit is old dated")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
@@ -157,7 +158,7 @@ func TestNewGitUpgradeRemoteRepositoryCommitChangesError(t *testing.T) {
 func TestNewGitUpgradeRemoteRepositoryPushError(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = noTagsProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("no-tags-project")
 	f.gitFunctions.errPush = errors.New("nothing to push")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
@@ -177,7 +178,7 @@ func TestNewGitUpgradeRemoteRepositoryPushError(t *testing.T) {
 func TestNewGitUpgradeRemoteRepositorySetTagError(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = noTagsProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("no-tags-project")
 	f.gitFunctions.errSetTag = errors.New("unable to set new tag")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
@@ -197,7 +198,7 @@ func TestNewGitUpgradeRemoteRepositorySetTagError(t *testing.T) {
 func TestNewGitUpgradeRemoteRepositoryPushTagsError(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = noTagsProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("no-tags-project")
 	f.gitFunctions.errPushTag = errors.New("unable to push tags to remote repository")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
@@ -217,7 +218,7 @@ func TestNewGitUpgradeRemoteRepositoryPushTagsError(t *testing.T) {
 func TestNewGitUpgradeRemoteRepositoryNoError(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = noTagsProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("no-tags-project")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
 
@@ -246,7 +247,7 @@ func TestNewGitUpgradeRemoteRepositoryNoError(t *testing.T) {
 func TestNewGitUpgradeRemoteRepositoryProtectedTagError(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = protectedTagProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "protected-tag-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("protected-tag-project")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
 
@@ -259,7 +260,7 @@ func TestNewGitUpgradeRemoteRepositoryProtectedTagError(t *testing.T) {
 func TestNewGitUpgradeRemoteRepositoryAlreadyPushedTagError(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = noTagsProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "no-tags-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("no-tags-project")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
 
@@ -282,7 +283,7 @@ func TestNewGitUpgradeRemoteRepositoryAlreadyPushedTagError(t *testing.T) {
 func TestNewGitUpgradeRemoteRepositoryPushToProtectedBranchError(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = protectedBranchProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "protected-branch-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("protected-branch-project")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
 
@@ -300,7 +301,7 @@ func TestNewGitUpgradeRemoteRepositoryPushToProtectedBranchError(t *testing.T) {
 func TestNewGitGetCurrentVersionFromRepoWithAlphaCharacteres(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = alphaTagProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "alpha-tag-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("alpha-tag-project")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
 
@@ -312,7 +313,7 @@ func TestNewGitGetCurrentVersionFromRepoWithAlphaCharacteres(t *testing.T) {
 func TestNewGitGetCurrentVersionFromRepoWithAlphaAndNumericCharacteres(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = alphaNumericTagProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "alpha-numeric-tag-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("alpha-numeric-tag-project")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
 
@@ -324,7 +325,7 @@ func TestNewGitGetCurrentVersionFromRepoWithAlphaAndNumericCharacteres(t *testin
 func TestNewGitGetCurrentVersionFromRepoWithTagsOutOfPattern(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = tagsOutOfPatternProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "tags-out-of-pattern-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("tags-out-of-pattern-project")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
 
@@ -337,7 +338,7 @@ func TestNewGitGetCurrentVersionFromRepoWithTagsOutOfPattern(t *testing.T) {
 func TestNewGitGetCurrentVersionFromRepoWithGreatNumbersTag(t *testing.T) {
 	f := getValidSetup()
 	f.gitLabVersioning.url = greatNumbersTagProject
-	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "great-numbers-tag-project")
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("great-numbers-tag-project")
 	repo, err := f.newGitService()
 	tests.AssertNoError(t, err)
 
@@ -345,6 +346,23 @@ func TestNewGitGetCurrentVersionFromRepoWithGreatNumbersTag(t *testing.T) {
 	tests.AssertNil(t, err)
 	tests.AssertEqualValues(t, "3.0.2", result)
 	f.cleanLocalRepo(t)
+}
+
+func TestNewGitGetCurrentVersionFromRepoWithDisorderedTags(t *testing.T) {
+	f := getValidSetup()
+	f.gitLabVersioning.url = disorderedTagsProject
+	f.gitLabVersioning.destinationDirectory = getDestinationDirectory("disordered-tags-prject")
+	repo, err := f.newGitService()
+	tests.AssertNoError(t, err)
+
+	result, err := repo.GetMostRecentTag()
+	tests.AssertNil(t, err)
+	tests.AssertEqualValues(t, "20.1.0", result)
+	f.cleanLocalRepo(t)
+}
+
+func getDestinationDirectory(repo string) string {
+	return fmt.Sprintf("%s/%s", os.Getenv("HOME"), repo)
 }
 
 // func TestGetChangelogWorks(t *testing.T) {

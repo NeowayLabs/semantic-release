@@ -121,7 +121,7 @@ Add new integration tests if you make a change that needs to interact with a rep
 make env
 ```
 
-This will run a container with a full GitLab. Wait for GitLab to be accessible through the browser.
+This will run a container with a full GitLab. Wait for GitLab to be accessible through the browser. It can take up to 5 minutes.
 
 Address: https://localhost:443
 

@@ -512,7 +512,7 @@ func isSetNewVersion(latest, version *Version, tag string) (*Version, string) {
 	if latest == nil || version.isGreaterThan(latest) {
 		return version, tag
 	}
-	return latest, ""
+	return latest, fmt.Sprintf("%d.%d.%d", latest.Major, latest.Minor, latest.Patch)
 }
 
 func (v *Version) isGreaterThan(other *Version) bool {
