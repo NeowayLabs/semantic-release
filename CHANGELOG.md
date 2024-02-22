@@ -1,3 +1,6 @@
+v1.0.5
+ - Fix isSetNewVersion function logic (@esequiel.virtuoso)
+
 v1.0.4
  - Fix versioning problem (@lucas.oliveira)
  - Changed `gitlab-backup.sh` to keep all backups (@lucas.oliveira)
