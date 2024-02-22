@@ -50,6 +50,8 @@ semantic-release:
 
 ```
 
+Also, you can add `-changelog "true"` argument to set semantic-release to get most recent version from CHANGELOG.md file instead of get it from gitlab tags.
+
 If your project is a Python project you can add the flag `-setup-py true` to update the release version in this file too.
 
 Note: The version must be placed in a variable called `__version__` as follows:

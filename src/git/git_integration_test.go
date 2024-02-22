@@ -364,3 +364,81 @@ func TestNewGitGetCurrentVersionFromRepoWithDisorderedTags(t *testing.T) {
 func getDestinationDirectory(repo string) string {
 	return fmt.Sprintf("%s/%s", os.Getenv("HOME"), repo)
 }
+
+// func TestGetChangelogWorks(t *testing.T) {
+// 	f := getValidSetup()
+// 	defer f.cleanLocalRepo(t)
+// 	f.gitLabVersioning.url = greatNumbersTagProject
+// 	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "get-changelog")
+// 	repo, err := f.newGitService()
+// 	file, err := os.Create(fmt.Sprintf("%s/%s/%s", os.Getenv("HOME"), "get-changelog", "CHANGELOG"))
+// 	if err != nil {
+// 		fmt.Println("Error to create file", err)
+// 		return
+// 	}
+// 	defer file.Close()
+// 	tests.AssertNoError(t, err)
+// 	fmt.Fprintf(file, "type [fix], message: testing message")
+
+// 	result, err := repo.GetChangelog()
+// 	tests.AssertNil(t, err)
+// 	tests.AssertNotNil(t, result)
+// }
+
+// func TestGetChangelogChangesWorks(t *testing.T) {
+// 	f := getValidSetup()
+// 	f.gitLabVersioning.url = greatNumbersTagProject
+// 	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "update-changelog")
+// 	repo, err := f.newGitService()
+// 	file, err := os.Create(fmt.Sprintf("%s/%s/%s", os.Getenv("HOME"), "update-changelog", "CHANGELOG"))
+// 	if err != nil {
+// 		fmt.Println("Error to create file", err)
+// 		return
+// 	}
+// 	defer file.Close()
+// 	tests.AssertNoError(t, err)
+// 	changelogSample := getChangelogSample()
+// 	fmt.Fprintf(file, changelogSample)
+
+// 	result, err := repo.GetChangelogChanges()
+// 	tests.AssertNil(t, err)
+// 	tests.AssertNotNil(t, result)
+// 	tests.AssertEqualValues(t, "type: [fix], message: testing message", result)
+// 	f.cleanLocalRepo(t)
+// }
+
+// func TestGetChangelogChangesError(t *testing.T) {
+// 	f := getValidSetup()
+// 	f.gitLabVersioning.url = greatNumbersTagProject
+// 	f.gitLabVersioning.destinationDirectory = fmt.Sprintf("%s/%s", os.Getenv("HOME"), "update-changelog")
+// 	repo, err := f.newGitService()
+// 	file, err := os.Create(fmt.Sprintf("%s/%s/%s", os.Getenv("HOME"), "update-changelog", "CHANGELOG"))
+// 	if err != nil {
+// 		fmt.Println("Error to create file", err)
+// 		return
+// 	}
+// 	defer file.Close()
+// 	tests.AssertNoError(t, err)
+// 	changelogSample := getChangelogSampleWithTwoChanges()
+// 	fmt.Fprintf(file, changelogSample)
+
+// 	result, err := repo.GetChangelogChanges()
+// 	tests.AssertEmpty(t, result)
+// 	tests.AssertNotNil(t, err)
+// 	f.cleanLocalRepo(t)
+// }
+
+// func getChangelogSample() string {
+// 	return `type: [fix], message: testing message
+
+// 	## v1.9.9
+// 	type: [fix], message: v199`
+// }
+
+// func getChangelogSampleWithTwoChanges() string {
+// 	return `type: [fix], message: testing message
+// 	type: [feat], message: feat message
+
+// 	## v1.9.9
+// 	type: [fix], message: v199`
+// }

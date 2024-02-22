@@ -1,3 +1,6 @@
+v1.1.0:
+ - generate release from changelog (@mateus.mello)
+
 v1.0.5
  - Fix isSetNewVersion function logic (@esequiel.virtuoso)
 

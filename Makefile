@@ -100,7 +100,7 @@ check: modcache imagedev
 	$(run) go test -tags unit -timeout 20s -race -coverprofile=$(cov) ./...
 
 check-integration: imagedev start-env
-	$(runcompose) --entrypoint "./hack/check-integration.sh" semantic-release
+	$(runcompose) --entrypoint "./hack/check-integration.sh" semantic-release $(testfile) $(testname)
 
 coverage: modcache check
 	$(run) go tool cover -html=$(cov) -o=$(covhtml)
