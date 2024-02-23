@@ -34,7 +34,8 @@ func PrintElapsedTimeMock(what string) func() {
 
 func TestGetNewVersionGetCommitChangeTypeFromMessageError(t *testing.T) {
 	f := setup()
-	actualVersion, actualErr := f.versionControl.GetNewVersion("", "")
+	upgradeType := ""
+	actualVersion, actualErr := f.versionControl.GetNewVersion("", "", upgradeType)
 	tests.AssertError(t, actualErr)
 	tests.AssertEqualValues(t, "error while finding commit change type within commit message due to: change type not found", actualErr.Error())
 	tests.AssertEmpty(t, actualVersion)
@@ -42,7 +43,8 @@ func TestGetNewVersionGetCommitChangeTypeFromMessageError(t *testing.T) {
 
 func TestGetNewVersionSplitVersionMajorMinorPatchError(t *testing.T) {
 	f := setup()
-	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[feat]", "1.0.a")
+	upgradeType := ""
+	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[feat]", "1.0.a", upgradeType)
 	tests.AssertError(t, actualErr)
 	tests.AssertEqualValues(t, "error while spliting version into MAJOR.MINOR.PATCH due to: could not convert a to int", actualErr.Error())
 	tests.AssertEmpty(t, actualVersion)
@@ -50,7 +52,8 @@ func TestGetNewVersionSplitVersionMajorMinorPatchError(t *testing.T) {
 
 func TestGetNewVersionSplitVersionPathernError(t *testing.T) {
 	f := setup()
-	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[feat]", "1.0")
+	upgradeType := ""
+	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[feat]", "1.0", upgradeType)
 	tests.AssertError(t, actualErr)
 	tests.AssertEqualValues(t, "error while spliting version into MAJOR.MINOR.PATCH due to: version must follow the pattern major.minor.patch. I.e.: 1.0.0", actualErr.Error())
 	tests.AssertEmpty(t, actualVersion)
@@ -58,7 +61,8 @@ func TestGetNewVersionSplitVersionPathernError(t *testing.T) {
 
 func TestGetNewVersionGetUpgradeTypeError(t *testing.T) {
 	f := setup()
-	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[skip]", "1.0.0")
+	upgradeType := ""
+	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[skip]", "1.0.0", upgradeType)
 	tests.AssertError(t, actualErr)
 	tests.AssertEqualValues(t, "error while getting upgrade type due to: skip is an invalid upgrade change type", actualErr.Error())
 	tests.AssertEmpty(t, actualVersion)
@@ -66,21 +70,24 @@ func TestGetNewVersionGetUpgradeTypeError(t *testing.T) {
 
 func TestGetNewVersionMajorSuccess(t *testing.T) {
 	f := setup()
-	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[breaking change]", "1.0.0")
+	upgradeType := ""
+	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[breaking change]", "1.0.0", upgradeType)
 	tests.AssertNoError(t, actualErr)
 	tests.AssertEqualValues(t, "2.0.0", actualVersion)
 }
 
 func TestGetNewVersionMinorSuccess(t *testing.T) {
 	f := setup()
-	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[feat]", "1.0.0")
+	upgradeType := ""
+	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[feat]", "1.0.0", upgradeType)
 	tests.AssertNoError(t, actualErr)
 	tests.AssertEqualValues(t, "1.1.0", actualVersion)
 }
 
 func TestGetNewVersionPatchSuccess(t *testing.T) {
 	f := setup()
-	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[fix]", "1.0.0")
+	upgradeType := ""
+	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[fix]", "1.0.0", upgradeType)
 	tests.AssertNoError(t, actualErr)
 	tests.AssertEqualValues(t, "1.0.1", actualVersion)
 }
@@ -102,11 +109,36 @@ func TestMustSkipVersioningTrue(t *testing.T) {
 
 func TestGetNewVersionFirstVersionSuccess(t *testing.T) {
 	f := setup()
-	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[fix]", "0.0.0")
+	upgradeType := ""
+	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[fix]", "0.0.0", upgradeType)
 	tests.AssertNoError(t, actualErr)
 	tests.AssertEqualValues(t, "1.0.0", actualVersion)
 
-	actualVersion, actualErr = f.versionControl.GetNewVersion("type:[feat]", "0.0.0")
+	actualVersion, actualErr = f.versionControl.GetNewVersion("type:[feat]", "0.0.0", upgradeType)
 	tests.AssertNoError(t, actualErr)
 	tests.AssertEqualValues(t, "1.0.0", actualVersion)
+}
+
+func TestGetNewVersionSpecificPatchSuccess(t *testing.T) {
+	f := setup()
+	upgradeType := "patch"
+	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[feat]", "1.0.0", upgradeType)
+	tests.AssertNoError(t, actualErr)
+	tests.AssertEqualValues(t, "1.0.1", actualVersion)
+}
+
+func TestGetNewVersionSpecificMajorSuccess(t *testing.T) {
+	f := setup()
+	upgradeType := "major"
+	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[feat]", "1.0.0", upgradeType)
+	tests.AssertNoError(t, actualErr)
+	tests.AssertEqualValues(t, "2.0.0", actualVersion)
+}
+
+func TestGetNewVersionSpecificMinorSuccess(t *testing.T) {
+	f := setup()
+	upgradeType := "minor"
+	actualVersion, actualErr := f.versionControl.GetNewVersion("type:[fix]", "1.0.0", upgradeType)
+	tests.AssertNoError(t, actualErr)
+	tests.AssertEqualValues(t, "1.1.0", actualVersion)
 }
