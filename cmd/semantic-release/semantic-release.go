@@ -37,6 +37,8 @@ func main() {
 	helpCmd := flag.NewFlagSet("help", flag.ExitOnError)
 	helpCommitCmd := flag.NewFlagSet("help-cmt", flag.ExitOnError)
 
+	commitLint := upgradeVersionCmd.Bool("commit-lint", false, "Only lint commit history if set as true. (default false)")
+	branchName := upgradeVersionCmd.String("branch-name", "", "Branch name to be cloned.")
 	gitHost := upgradeVersionCmd.String("git-host", "", "Git host name. I.e.: gitlab.integration-tests.com. (required)")
 	groupName := upgradeVersionCmd.String("git-group", "", "Git group name. (required)")
 	projectName := upgradeVersionCmd.String("git-project", "", "Git project name. (required)")
@@ -67,15 +69,26 @@ func main() {
 	case "up":
 		logger.Info(colorYellow + "\nSemantic Version just started the process...\n\n" + colorReset)
 
-		semantic := newSemantic(logger, upgradeVersionCmd, gitHost, groupName, projectName, username, password, upgradePyFile)
+		fmt.Println(*gitHost)
+		semantic := newSemantic(logger, upgradeVersionCmd, gitHost, groupName, projectName, username, password, upgradePyFile, branchName)
 
+		if *commitLint {
+			if *branchName == "" {
+				logger.Error(colorRed + "\nThe argument -branch-name must be set when --commit-lint is true.\n\n" + colorReset)
+			}
+			// LINT HERE
+			logger.Info(colorYellow + "\nSemantic Version commit lint started...\n\n" + colorReset)
+			semantic.CommitLint()
+			logger.Info(colorRed + "\nAbout to exit.\n\n" + colorReset)
+			os.Exit(1)
+		}
+		os.Exit(1)
 		if err := semantic.GenerateNewRelease(); err != nil {
 			logger.Error(err.Error())
 			os.Exit(1)
 		}
 
 		logger.Info(colorYellow + "\nDone!" + colorReset)
-
 	case "help":
 		printMainCommands()
 		helpCmd.PrintDefaults()
@@ -112,7 +125,7 @@ func addFilesToUpgradeList(upgradePyFile *bool, repositoryRootPath string) Upgra
 }
 
 func validateIncomingParams(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, username, password *string, upgradePyFile *bool) {
-
+	fmt.Println(*projectName)
 	if *gitHost == "" {
 		logger.Info(colorRed + "Oops! Git host name must be specified." + colorReset + "[docker run neowaylabs/semantic-release up " + colorYellow + "-git-host gitHostNameHere]" + colorReset)
 		os.Exit(1)
@@ -180,7 +193,7 @@ func printCommitMessageExample() {
 	fmt.Println("\n\tNote: The maximum number of characters is 150. If the commit subject exceeds it, it will be cut, keeping only the first 150 characters.")
 }
 
-func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, username, password *string, upgradePyFile *bool) *semantic.Semantic {
+func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, username, password *string, upgradePyFile *bool, branchName *string) *semantic.Semantic {
 
 	validateIncomingParams(logger, upgradeVersionCmd, gitHost, groupName, projectName, username, password, upgradePyFile)
 
@@ -188,7 +201,7 @@ func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, grou
 	repositoryRootPath := fmt.Sprintf("%s/%s", homePath, *projectName)
 
 	url := fmt.Sprintf("https://%s:%s@%s/%s/%s.git", *username, *password, *gitHost, *groupName, *projectName)
-	repoVersionControl, err := git.New(logger, timer.PrintElapsedTime, url, *username, *password, repositoryRootPath)
+	repoVersionControl, err := git.New(logger, timer.PrintElapsedTime, url, *username, *password, repositoryRootPath, *branchName)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}

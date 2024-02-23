@@ -76,8 +76,8 @@ func (g *GitVersioning) substituteFunctions(newGit Git) {
 }
 
 func NewMock(log Logger, printElapsedTime ElapsedTime, url, username, password, destinationDirectory string, git Git) (*GitVersioning, error) {
-
-	gitLabVersioning, err := New(log, printElapsedTime, url, username, password, destinationDirectory)
+	branchName := ""
+	gitLabVersioning, err := New(log, printElapsedTime, url, username, password, destinationDirectory, branchName)
 	if err != nil {
 		return nil, err
 	}
