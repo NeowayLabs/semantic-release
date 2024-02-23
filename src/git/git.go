@@ -479,7 +479,7 @@ func (g *GitVersioning) initialize() error {
 		}
 		commitHistoryCurrentBranch, err := g.git.getCommitHistory()
 		if err != nil {
-			return fmt.Errorf("error while retrieving the commit history  due to: %w", err)
+			return fmt.Errorf("error while retrieving the commit history due to: %w", err)
 		}
 		g.commitHistoryCurrentBranch = commitHistoryCurrentBranch
 	}
@@ -491,11 +491,13 @@ func (g *GitVersioning) initialize() error {
 
 	commitHistory, err := g.git.getCommitHistory()
 	if err != nil {
-		return fmt.Errorf("error while retrieving the commit history  due to: %w", err)
+		return fmt.Errorf("error while retrieving the commit history due to: %w", err)
 	}
 	g.commitHistory = commitHistory
 
-	g.commitHistoryDiff = g.getCurrentBranchCommitsDiff()
+	if g.branchName != "" {
+		g.commitHistoryDiff = g.getCurrentBranchCommitsDiff()
+	}
 
 	mostRecentCommit, err := g.git.getMostRecentCommit()
 	if err != nil {

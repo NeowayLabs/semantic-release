@@ -76,11 +76,12 @@ func main() {
 			if *branchName == "" {
 				logger.Error(colorRed + "\nThe argument -branch-name must be set when --commit-lint is true.\n\n" + colorReset)
 			}
-			// LINT HERE
+
 			logger.Info(colorYellow + "\nSemantic Version commit lint started...\n\n" + colorReset)
-			semantic.CommitLint()
-			logger.Info(colorRed + "\nAbout to exit.\n\n" + colorReset)
-			os.Exit(1)
+			err := semantic.CommitLint()
+			if err != nil {
+				os.Exit(1)
+			}
 		}
 		os.Exit(1)
 		if err := semantic.GenerateNewRelease(); err != nil {

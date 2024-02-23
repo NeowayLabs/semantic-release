@@ -3,7 +3,6 @@ package semantic
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -134,12 +133,12 @@ func (s *Semantic) CommitLint() error {
 	areThereWrongCommits := false
 	for _, commit := range commitHistoryDiff {
 		if !s.isValidMessage(commit.Message) {
-			s.log.Error(colorYellow+"commit message "+colorCyan+"( %s )"+colorYellow+" does not follow semantic-release pattern "+colorCyan+"( type: [commit type], message: message here. )"+colorReset, commit.Message)
+			s.log.Error(colorYellow+"commit message "+colorCyan+"( %s )"+colorYellow+" does not meet semantic-release pattern "+colorCyan+"( type: [commit type], message: message here. )"+colorReset, commit.Message)
 			areThereWrongCommits = true
 		}
 	}
 	if areThereWrongCommits {
-		os.Exit(1)
+		return errors.New("commit messages dos not meet semantic-release pattern")
 	}
 
 	return nil

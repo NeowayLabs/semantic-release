@@ -40,14 +40,16 @@ stages:
 
 semantic-release:
     stage: semantic-release
+    variables:
+        SEMANTIC_RELEASE_VERSION: latest
+    dependencies: []
     only:
         refs:
             - master
-    before_script: 
-        - docker pull registry.com/dataplatform/semantic-release:latest
+    before_script:
+        - docker pull registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION
     script:
-        - docker run registry.com/dataplatform/semantic-release:latest up -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
-
+        - docker run registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION up -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
 ```
 
 If your project is a Python project you can add the flag `-setup-py true` to update the release version in this file too.
@@ -75,6 +77,30 @@ setup(
     install_requires=requirements,
     packages=find_packages(),
 )
+```
+
+ ### How to add commit lint stage to Gitlab?
+
+ You must add a new stage to `gitlab-ci.yml` file adding two new arguments to semantic-release script.
+ - `commit-lint=true` to run commit-lint logic;
+ - `-branch-name=${CI_COMMIT_REF_NAME}` so that semantic-release can validate only the commits of the referenced branch.
+
+```yaml
+stages:
+  - commit-lint
+
+commit-lint:
+    stage: commit-int
+    variables:
+        SEMANTIC_RELEASE_VERSION: latest
+    dependencies: []
+    only:
+        refs:
+            - master
+    before_script:
+        - docker pull registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION
+    script:
+        - docker run registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION up -commit-lint=true -branch-name=${CI_COMMIT_REF_NAME} -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
 ```
 
  ### If you need more information about the semantic release CLI usage you can run the following command.
