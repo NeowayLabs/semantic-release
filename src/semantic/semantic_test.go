@@ -11,6 +11,7 @@ import (
 	"github.com/NeowayLabs/semantic-release/src/log"
 	"github.com/NeowayLabs/semantic-release/src/semantic"
 	"github.com/NeowayLabs/semantic-release/src/tests"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 type RepositoryVersionControlMock struct {
@@ -21,6 +22,8 @@ type RepositoryVersionControlMock struct {
 	currentVersion       string
 	currentChangesInfo   changesInfoMock
 	errUpgradeRemoteRepo error
+	commitHistory        []*object.Commit
+	commitHistoryDiff    []*object.Commit
 }
 
 func (r *RepositoryVersionControlMock) GetChangeHash() string {
@@ -41,6 +44,14 @@ func (r *RepositoryVersionControlMock) GetCurrentVersion() string {
 
 func (r *RepositoryVersionControlMock) UpgradeRemoteRepository(newVersion string) error {
 	return r.errUpgradeRemoteRepo
+}
+
+func (r *RepositoryVersionControlMock) GetCommitHistory() []*object.Commit {
+	return r.commitHistory
+}
+
+func (r *RepositoryVersionControlMock) GetCommitHistoryDiff() []*object.Commit {
+	return r.commitHistoryDiff
 }
 
 type VersionControlMock struct {

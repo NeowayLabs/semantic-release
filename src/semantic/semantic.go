@@ -3,6 +3,10 @@ package semantic
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strings"
+
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 const (
@@ -24,6 +28,8 @@ type RepositoryVersionControl interface {
 	GetChangeMessage() string
 	GetCurrentVersion() string
 	UpgradeRemoteRepository(newVersion string) error
+	GetCommitHistory() []*object.Commit
+	GetCommitHistoryDiff() []*object.Commit
 }
 
 type VersionControl interface {
@@ -105,6 +111,35 @@ func (s *Semantic) GenerateNewRelease() error {
 
 	if err := s.repoVersionControl.UpgradeRemoteRepository(newVersion); err != nil {
 		return errors.New("error while upgrading remote repository due to: " + err.Error())
+	}
+
+	return nil
+}
+
+func (s *Semantic) isValidMessage(message string) bool {
+	_, err := s.versionControl.GetCommitChangeType(message)
+	if err != nil {
+		if err.Error() == "change type not found" {
+			s.log.Error("change type not found")
+		}
+		return false
+	}
+
+	return strings.Contains(strings.ToLower(message), ", message:")
+}
+
+func (s *Semantic) CommitLint() error {
+	commitHistoryDiff := s.repoVersionControl.GetCommitHistoryDiff()
+
+	areThereWrongCommits := false
+	for _, commit := range commitHistoryDiff {
+		if !s.isValidMessage(commit.Message) {
+			s.log.Error(colorYellow+"commit message "+colorCyan+"( %s )"+colorYellow+" does not follow semantic-release pattern "+colorCyan+"( type: [commit type], message: message here. )"+colorReset, commit.Message)
+			areThereWrongCommits = true
+		}
+	}
+	if areThereWrongCommits {
+		os.Exit(1)
 	}
 
 	return nil
