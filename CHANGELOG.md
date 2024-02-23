@@ -1,3 +1,6 @@
+v1.1.0
+ - Add `upgrade-type` argument option to allow manually specifying version type upgrade (@esequiel.virtuoso)
+
 v1.0.5
  - Fix isSetNewVersion function logic (@esequiel.virtuoso)
 

@@ -55,7 +55,7 @@ func (v *VersionControlMock) GetCommitChangeType(commitMessage string) (string, 
 	return v.commitChangeType, v.errCommitChangeType
 }
 
-func (v *VersionControlMock) GetNewVersion(commitMessage string, currentVersion string) (string, error) {
+func (v *VersionControlMock) GetNewVersion(commitMessage string, currentVersion string, upgradeType string) (string, error) {
 	return v.newVersion, v.errGetNewVersion
 }
 
@@ -93,7 +93,8 @@ func (f *fixture) NewSemantic() *semantic.Semantic {
 		errors.New("error while getting new log")
 	}
 
-	return semantic.New(logger, f.rootPath, f.filesToUpdateVariable, f.repoVersionMock, f.filesVersionMock, f.versionControlMock)
+	version := ""
+	return semantic.New(logger, f.rootPath, f.filesToUpdateVariable, f.repoVersionMock, f.filesVersionMock, f.versionControlMock, version)
 }
 
 type upgradeFilesMock struct {

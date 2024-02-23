@@ -28,7 +28,7 @@ type RepositoryVersionControl interface {
 
 type VersionControl interface {
 	GetCommitChangeType(commitMessage string) (string, error)
-	GetNewVersion(commitMessage string, currentVersion string) (string, error)
+	GetNewVersion(commitMessage string, currentVersion string, upgradeType string) (string, error)
 	MustSkipVersioning(commitMessage string) bool
 }
 
@@ -54,6 +54,7 @@ type Semantic struct {
 	repoVersionControl    RepositoryVersionControl
 	versionControl        VersionControl
 	filesVersionControl   FilesVersionControl
+	upgradeType           string
 }
 
 func (s *Semantic) GenerateNewRelease() error {
@@ -65,12 +66,12 @@ func (s *Semantic) GenerateNewRelease() error {
 		CurrentVersion: s.repoVersionControl.GetCurrentVersion(),
 	}
 
-	if s.versionControl.MustSkipVersioning(changesInfo.Message) {
+	if s.versionControl.MustSkipVersioning(changesInfo.Message) && s.upgradeType == "" {
 		s.log.Info(colorCyan + "Semantic Release has been skiped by commit message tag [skip]" + colorReset)
 		return nil
 	}
 
-	newVersion, err := s.versionControl.GetNewVersion(changesInfo.Message, changesInfo.CurrentVersion)
+	newVersion, err := s.versionControl.GetNewVersion(changesInfo.Message, changesInfo.CurrentVersion, s.upgradeType)
 	if err != nil {
 		return errors.New("error while getting new version due to: " + err.Error())
 	}
@@ -110,7 +111,7 @@ func (s *Semantic) GenerateNewRelease() error {
 	return nil
 }
 
-func New(log Logger, rootPath string, filesToUpdateVariable interface{}, repoVersionControl RepositoryVersionControl, filesVersionControl FilesVersionControl, versionControl VersionControl) *Semantic {
+func New(log Logger, rootPath string, filesToUpdateVariable interface{}, repoVersionControl RepositoryVersionControl, filesVersionControl FilesVersionControl, versionControl VersionControl, upgradeType string) *Semantic {
 	return &Semantic{
 		log:                   log,
 		rootPath:              rootPath,
@@ -118,5 +119,6 @@ func New(log Logger, rootPath string, filesToUpdateVariable interface{}, repoVer
 		repoVersionControl:    repoVersionControl,
 		filesVersionControl:   filesVersionControl,
 		versionControl:        versionControl,
+		upgradeType:           upgradeType,
 	}
 }

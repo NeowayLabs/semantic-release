@@ -77,6 +77,30 @@ setup(
 )
 ```
 
+### Upgrade specific type
+
+Moreover, semantic release allows us to set a specific part of the version with the argument `upgrade-type` that can be set as `major`, `minor`, or `patch` as follows.
+
+```yaml
+stages:
+  - semantic-release
+
+semantic-release:
+    stage: semantic-release
+    only:
+        refs:
+            - master
+    before_script: 
+        - docker pull registry.com/dataplatform/semantic-release:latest
+    script:
+        - docker run registry.com/dataplatform/semantic-release:latest up -upgrade-type major -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
+
+```
+
+- If the current version is `1.2.3` and you set `upgrade-type` as `major` the new version will be `2.0.0`;
+- If the current version is `1.2.3` and you set `upgrade-type` as `minor` the new version will be `1.3.0`;
+- If the current version is `1.2.3` and you set `upgrade-type` as `patch` the new version will be `1.2.4`;
+
  ### If you need more information about the semantic release CLI usage you can run the following command.
 
 ```
