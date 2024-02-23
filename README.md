@@ -40,13 +40,16 @@ stages:
 
 semantic-release:
     stage: semantic-release
+    variables:
+        SEMANTIC_RELEASE_VERSION: latest
+    dependencies: []
     only:
         refs:
             - master
-    before_script: 
-        - docker pull registry.com/dataplatform/semantic-release:latest
+    before_script:
+        - docker pull registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION
     script:
-        - docker run registry.com/dataplatform/semantic-release:latest up -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
+        - docker run registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION up -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
 
 ```
 
@@ -86,14 +89,19 @@ stages:
   - semantic-release
 
 semantic-release:
-    stage: semantic-release
+    stage: major-upgrade
+    when: manual
+    variables:
+        SEMANTIC_RELEASE_VERSION: latest
+        UPGRADE_TYPE: major
+    dependencies: []
     only:
         refs:
             - master
-    before_script: 
-        - docker pull registry.com/dataplatform/semantic-release:latest
+    before_script:
+        - docker pull registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION
     script:
-        - docker run registry.com/dataplatform/semantic-release:latest up -upgrade-type major -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
+        - docker run registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION up -upgrade-type $UPGRADE_TYPE -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
 
 ```
 
