@@ -19,5 +19,7 @@ done
 if [ ${found} = 0 ] ; then
 	echo "Commit message should meet semantic-release pattern." 1>&2
         echo "    type: [type-here], message: message here" 1>&2
+        echo "Allowed types:" 1>&2
+        echo "    ['fix', 'feat', 'docs', 'skip', 'build', 'ci', 'perf', 'refactor', 'style', 'test', 'breaking change', 'breaking changes', 'skip versioning', 'skip v']"1>&2
         exit 1
 fi
