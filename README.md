@@ -43,9 +43,8 @@ semantic-release:
     variables:
         SEMANTIC_RELEASE_VERSION: latest
     dependencies: []
-    only:
-        refs:
-            - master
+    except:
+        - master
     before_script:
         - docker pull registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION
     script:
@@ -94,9 +93,6 @@ commit-lint:
     variables:
         SEMANTIC_RELEASE_VERSION: latest
     dependencies: []
-    only:
-        refs:
-            - master
     before_script:
         - docker pull registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION
     script:
