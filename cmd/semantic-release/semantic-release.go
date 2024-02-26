@@ -82,11 +82,11 @@ func main() {
 			if err != nil {
 				os.Exit(1)
 			}
-		}
-		os.Exit(1)
-		if err := semantic.GenerateNewRelease(); err != nil {
-			logger.Error(err.Error())
-			os.Exit(1)
+		} else {
+			if err := semantic.GenerateNewRelease(); err != nil {
+				logger.Error(err.Error())
+				os.Exit(1)
+			}
 		}
 
 		logger.Info(colorYellow + "\nDone!" + colorReset)
@@ -126,7 +126,6 @@ func addFilesToUpgradeList(upgradePyFile *bool, repositoryRootPath string) Upgra
 }
 
 func validateIncomingParams(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, username, password *string, upgradePyFile *bool) {
-	fmt.Println(*projectName)
 	if *gitHost == "" {
 		logger.Info(colorRed + "Oops! Git host name must be specified." + colorReset + "[docker run neowaylabs/semantic-release up " + colorYellow + "-git-host gitHostNameHere]" + colorReset)
 		os.Exit(1)
