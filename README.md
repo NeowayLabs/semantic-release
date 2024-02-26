@@ -103,6 +103,11 @@ commit-lint:
         - docker run registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION up -commit-lint=true -branch-name=${CI_COMMIT_REF_NAME} -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
 ```
 
+### Adding pre-commit message lint
+```
+make commit-message-install
+```
+
  ### If you need more information about the semantic release CLI usage you can run the following command.
 
 ```

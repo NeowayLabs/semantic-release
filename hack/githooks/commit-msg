@@ -1,0 +1,23 @@
+#!/bin/sh
+#!/bin/sh
+found=0
+for commit_type in 'fix' 'feat' 'docs' 'skip' 'build' 'ci' 'perf' 'refactor' 'style' 'test' 'breaking change' 'breaking changes' 'skip versioning' 'skip v'
+do
+    # I.e.: type: [fix], message:
+    regex_pattern="type: \[${commit_type}\], message:"
+
+    message=$(head -1 $1)
+
+    check=$(echo "$message" | grep -o -i "$regex_pattern" | wc -l)
+
+    if [ $check = "1" ] ; then
+        echo "Commit message ok!"
+        found=1
+        break
+    fi
+done
+if [ ${found} = 0 ] ; then
+	echo "Commit message should meet semantic-release pattern." 1>&2
+        echo "    type: [type-here], message: message here" 1>&2
+        exit 1
+fi
