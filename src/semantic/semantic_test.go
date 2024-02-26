@@ -7,10 +7,12 @@ import (
 	"errors"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/NeowayLabs/semantic-release/src/log"
 	"github.com/NeowayLabs/semantic-release/src/semantic"
 	"github.com/NeowayLabs/semantic-release/src/tests"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
@@ -147,6 +149,70 @@ func (f *fixture) GetValidUpgradeFilesInfo() upgradeFilesMock {
 	return upgradeFilesInfo
 }
 
+func (f *fixture) GetCommitHistoryWithWrongMessagesPattern() []*object.Commit {
+	var commitHistory []*object.Commit
+
+	author := object.Signature{
+		Name:  "John Doe",
+		Email: "john@doe.com",
+		When:  time.Now(),
+	}
+
+	commitHistory = append(commitHistory, &object.Commit{
+		Author:       author,
+		Hash:         plumbing.NewHash("anything"),
+		Committer:    author,
+		PGPSignature: "anything",
+		Message:      "This is a wrong commit message.",
+		TreeHash:     plumbing.NewHash("anything"),
+		ParentHashes: []plumbing.Hash{plumbing.NewHash("anything")},
+	})
+
+	commitHistory = append(commitHistory, &object.Commit{
+		Author:       author,
+		Hash:         plumbing.NewHash("anything"),
+		Committer:    author,
+		PGPSignature: "anything",
+		Message:      "Oh, no! Wrong again.",
+		TreeHash:     plumbing.NewHash("anything"),
+		ParentHashes: []plumbing.Hash{plumbing.NewHash("anything")},
+	})
+
+	return commitHistory
+}
+
+func (f *fixture) GetCommitHistoryWithRightMessagesPattern() []*object.Commit {
+	var commitHistory []*object.Commit
+
+	author := object.Signature{
+		Name:  "John Doe",
+		Email: "john@doe.com",
+		When:  time.Now(),
+	}
+
+	commitHistory = append(commitHistory, &object.Commit{
+		Author:       author,
+		Hash:         plumbing.NewHash("anything"),
+		Committer:    author,
+		PGPSignature: "anything",
+		Message:      "type: [fix], \nmessage: this is a fix correct commit message.",
+		TreeHash:     plumbing.NewHash("anything"),
+		ParentHashes: []plumbing.Hash{plumbing.NewHash("anything")},
+	})
+
+	commitHistory = append(commitHistory, &object.Commit{
+		Author:       author,
+		Hash:         plumbing.NewHash("anything"),
+		Committer:    author,
+		PGPSignature: "anything",
+		Message:      "type: [feat], \nmessage: this is a feature correct commit message.",
+		TreeHash:     plumbing.NewHash("anything"),
+		ParentHashes: []plumbing.Hash{plumbing.NewHash("anything")},
+	})
+
+	return commitHistory
+}
+
 func TestGenerateNewReleaseMustSkip(t *testing.T) {
 	f := setup()
 	f.versionControlMock.mustSkip = true
@@ -225,5 +291,23 @@ func TestGenerateNewReleaseSuccess(t *testing.T) {
 
 	semanticService := f.NewSemantic()
 	actualErr := semanticService.GenerateNewRelease()
+	tests.AssertNoError(t, actualErr)
+}
+
+func TestCommitLintError(t *testing.T) {
+	f := setup()
+	f.repoVersionMock.commitHistoryDiff = f.GetCommitHistoryWithWrongMessagesPattern()
+
+	semanticService := f.NewSemantic()
+	actualErr := semanticService.CommitLint()
+	tests.AssertError(t, actualErr)
+}
+
+func TestCommitLintSucess(t *testing.T) {
+	f := setup()
+	f.repoVersionMock.commitHistoryDiff = f.GetCommitHistoryWithRightMessagesPattern()
+
+	semanticService := f.NewSemantic()
+	actualErr := semanticService.CommitLint()
 	tests.AssertNoError(t, actualErr)
 }

@@ -124,7 +124,7 @@ func (s *Semantic) isValidMessage(message string) bool {
 		return false
 	}
 
-	return strings.Contains(strings.ToLower(message), ", message:")
+	return strings.Contains(strings.ToLower(message), "message:")
 }
 
 func (s *Semantic) CommitLint() error {
