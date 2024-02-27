@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	commitmessage "github.com/NeowayLabs/semantic-release/src/commit-message"
 	"github.com/NeowayLabs/semantic-release/src/files"
 	"github.com/NeowayLabs/semantic-release/src/git"
 	"github.com/NeowayLabs/semantic-release/src/log"
@@ -206,7 +207,9 @@ func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, grou
 		logger.Fatal(err.Error())
 	}
 
-	filesVersionControl := files.New(logger, timer.PrintElapsedTime, *gitHost, repositoryRootPath, *groupName, *projectName)
+	commitMessageManager := commitmessage.New(logger)
+
+	filesVersionControl := files.New(logger, timer.PrintElapsedTime, *gitHost, repositoryRootPath, *groupName, *projectName, commitMessageManager)
 
 	versionControl := v.NewVersionControl(logger, timer.PrintElapsedTime)
 

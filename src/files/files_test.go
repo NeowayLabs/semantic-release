@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 
+	commitmessage "github.com/NeowayLabs/semantic-release/src/commit-message"
 	"github.com/NeowayLabs/semantic-release/src/files"
 	"github.com/NeowayLabs/semantic-release/src/log"
 	"github.com/NeowayLabs/semantic-release/src/tests"
@@ -56,7 +57,9 @@ func setup(t *testing.T) *fixture {
 }
 
 func (f *fixture) newFiles() *files.FileVersion {
-	return files.New(f.log, printElapsedTimeMock, f.versionControlHost, f.repositoryRootPath, f.groupName, f.projectName)
+	commitMessageManager := commitmessage.New(f.log)
+
+	return files.New(f.log, printElapsedTimeMock, f.versionControlHost, f.repositoryRootPath, f.groupName, f.projectName, commitMessageManager)
 }
 
 func TestUpgradeVariableInFilesNoError(t *testing.T) {
