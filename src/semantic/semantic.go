@@ -139,7 +139,7 @@ func (s *Semantic) CommitLint() error {
 		}
 	}
 	if areThereWrongCommits {
-		s.log.Error(colorRed + "You can use " + colorBGRed + "git rebase -i HEAD~n " + colorReset + colorRed + "and edit commit list with reword before each commit message." + colorReset)
+		s.log.Error(colorRed + "You can use " + colorBGRed + "git rebase -i HEAD~n" + colorReset + colorRed + " and edit the commit list with reword before each commit message." + colorReset)
 		return errors.New("commit messages dos not meet semantic-release pattern")
 	}
 
