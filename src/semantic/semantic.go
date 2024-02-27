@@ -12,6 +12,7 @@ const (
 	colorCyan   = "\033[36m"
 	colorYellow = "\033[33m"
 	colorReset  = "\033[0m"
+	colorRed    = "\033[31m"
 	colorBGRed  = "\033[41;1;37m"
 )
 
@@ -133,12 +134,12 @@ func (s *Semantic) CommitLint() error {
 	areThereWrongCommits := false
 	for _, commit := range commitHistoryDiff {
 		if !s.isValidMessage(commit.Message) {
-			s.log.Error(colorYellow+"commit message "+colorCyan+"( %s )"+colorYellow+" does not meet semantic-release pattern "+colorCyan+"( type: [commit type], message: message here.)"+colorReset, strings.TrimSuffix(commit.Message, "\n"))
+			s.log.Error(colorRed+"commit message "+colorYellow+"( %s )"+colorRed+" does not meet semantic-release pattern "+colorYellow+"( type: [commit type], message: message here.)"+colorReset, strings.TrimSuffix(commit.Message, "\n"))
 			areThereWrongCommits = true
 		}
 	}
 	if areThereWrongCommits {
-		s.log.Error(colorYellow + "You can use " + colorBGRed + "git rebase -i HEAD~n " + colorYellow + "and edit commit list with reword before each commit message." + colorReset)
+		s.log.Error(colorRed + "You can use " + colorBGRed + "git rebase -i HEAD~n " + colorReset + colorRed + "and edit commit list with reword before each commit message." + colorReset)
 		return errors.New("commit messages dos not meet semantic-release pattern")
 	}
 
