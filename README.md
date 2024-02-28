@@ -78,30 +78,32 @@ setup(
 )
 ```
 
- ### Adding pre-commit message lint
+ ### Adding pre-commit message CLI
 
-The semantic-release `pre-commit message lint` will validate your commit messages before the commit being accepted.
-That will prevent you from having to rebase your commit history to adapt your commit messages to semantic-release standards.
+The `pre-commit` will validate your commit messages before the commit being accepted.
+That will prevent you from having to rebase your commit history to adapt your commit messages to [semantic-release](https://github.com/NeowayLabs/semantic-release) standards.
 
-Notes:
-1. To activate commit message template in a pre-existing local repository, go to the project root folder and run `git init` command.
-2. After `make commit-message-install`, Git will automatically activate commit message template to new cloned projects.
+**Requirements**
+- [Golang installation](https://go.dev/doc/install)
 
-Run the following command:
 
-```
-make commit-message-install
-```
-
-If for some reason you need to skip commit lint, you can run git commit with the `--no-verify` tag as follows.
+Clone pre-commit project and install it in you SO.
 
 ```
-git commit -m "type: [typo], message: We do not recommend doing this!" --no-verify
+git clone git@github.com:NeowayLabs/pre-commit.git
 ```
 
-We do not recommind using `--no-verify` for projects that use [commit lint ci step](#how-to-add-commit-lint-stage-to-gitlab) once it will validate all the branche commit messages.
+```
+make install
+```
 
-If at least one commit message breaks semantic-release standards, you'll have to rebase and reword the wrong commit messages.
+**How to use it?**
+
+After adding new changes with the `git add` command, you can run `commit` on any git project root path and follow CLI steps.
+
+```
+commit
+```
 
  ### How to use `rebase` to rename commit message?
 
