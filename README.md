@@ -78,10 +78,54 @@ setup(
 )
 ```
 
+ ### Adding pre-commit message lint
+
+The semantic-release `pre-commit message lint` will validate your commit messages before the commit being accepted.
+That will prevent you from having to rebase your commit history to adapt your commit messages to semantic-release standards.
+
+Notes:
+1. To activate commit message template in a pre-existing local repository, go to the project root folder and run `git init` command.
+2. After `make commit-message-install`, Git will automatically activate commit message template to new cloned projects.
+
+Run the following command:
+
+```
+make commit-message-install
+```
+
+If for some reason you need to skip commit lint, you can run git commit with the `--no-verify` tag as follows.
+
+```
+git commit -m "type: [typo], message: We do not recommend doing this!" --no-verify
+```
+
+We do not recommind using `--no-verify` for projects that use [commit lint ci step](#how-to-add-commit-lint-stage-to-gitlab) once it will validate all the branche commit messages.
+
+If at least one commit message breaks semantic-release standards, you'll have to rebase and reword the wrong commit messages.
+
+ ### How to use `rebase` to rename commit message?
+
+If the [commit lint ci step](#how-to-add-commit-lint-stage-to-gitlab) fail, you can rebase you commit history and fix the wrong commit messages.
+
+With your local repository up to date with your remote branch, run the following command.
+Note: `N` is the number of commits you pushed to your branch.
+
+```
+git rebase -i HEAD~N
+```
+
+Edit the document and replace the first word `pick` to `r` or `reword`. Save it with `ctrl+o` and close it with `ctrl+x`;
+
+Force push it with `-f` tag as follows:
+
+```
+git push -f origin my-branch-name
+```
+
  ### How to add commit lint stage to Gitlab?
 
  You must add a new stage to `gitlab-ci.yml` file adding two new arguments to semantic-release script.
- - `commit-lint=true` to run commit-lint logic;
+ - `-commit-lint=true` to run commit-lint logic;
  - `-branch-name=${CI_COMMIT_REF_NAME}` so that semantic-release can validate only the commits of the referenced branch.
 
 ```yaml
@@ -97,16 +141,6 @@ commit-lint:
         - docker pull registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION
     script:
         - docker run registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION up -commit-lint=true -branch-name=${CI_COMMIT_REF_NAME} -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
-```
-
-### Adding pre-commit message lint
-
-Notes:
-1. To activate commit message template in a pre-existing local repository, go to the project root folder and run `git init` command.
-2. After `make commit-message-install`, Git will automatically activate commit message template to new cloned projects.
-
-```
-make commit-message-install
 ```
 
  ### If you need more information about the semantic release CLI usage you can run the following command.
