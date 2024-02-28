@@ -143,6 +143,8 @@ func (s *Semantic) CommitLint() error {
 		return errors.New("commit messages dos not meet semantic-release pattern")
 	}
 
+	s.log.Info(colorRed + "Remember to adapt the " + colorBGRed + "MERGE REQUEST TITLE" + colorRed + " or the " + colorBGRed + "MERGE COMMIT MESSAGE" + colorRed + " to semantic-release standards so it can properlly generate the new tag release." + colorReset)
+
 	return nil
 }
 
