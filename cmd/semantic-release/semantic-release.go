@@ -70,7 +70,6 @@ func main() {
 	case "up":
 		logger.Info(colorYellow + "\nSemantic Version just started the process...\n\n" + colorReset)
 
-		fmt.Println(*gitHost)
 		semantic := newSemantic(logger, upgradeVersionCmd, gitHost, groupName, projectName, username, password, upgradePyFile, branchName)
 
 		if *commitLint {
