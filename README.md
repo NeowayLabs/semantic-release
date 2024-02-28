@@ -100,6 +100,11 @@ commit-lint:
 ```
 
 ### Adding pre-commit message lint
+
+Notes:
+1. To activate commit message template in a pre-existing local repository, go to the project root folder and run `git init` command.
+2. After `make commit-message-install`, Git will automatically activate commit message template to new cloned projects.
+
 ```
 make commit-message-install
 ```
