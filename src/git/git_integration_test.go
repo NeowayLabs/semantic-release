@@ -101,7 +101,7 @@ func TestNewGitCommitGetChangeMessageNoError(t *testing.T) {
 	tests.AssertNoError(t, err)
 
 	message := repo.GetChangeMessage()
-	tests.AssertEqualValues(t, "type: [feat]\r\nmessage: Added requirements.txt file.", message)
+	tests.AssertEqualValues(t, "feat: Added requirements.txt file.", message)
 	f.cleanLocalRepo(t)
 }
 
