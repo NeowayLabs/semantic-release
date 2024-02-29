@@ -399,7 +399,7 @@ func (g *GitVersioning) pushTags() error {
 func (g *GitVersioning) cloneRepoToDirectory() (*git.Repository, error) {
 	defer g.printElapsedTime("CloneRepoToDirectory")()
 
-	g.log.Info(colorYellow+"cloning current repository "+colorCyan+" %s "+colorYellow+" into "+colorCyan+"%s"+colorReset, g.destinationDirectory)
+	g.log.Info(colorYellow+"cloning current repository to "+colorCyan+" %s "+colorReset, g.destinationDirectory)
 	opts := &git.CloneOptions{
 		Progress: os.Stdout,
 		URL:      g.url,
