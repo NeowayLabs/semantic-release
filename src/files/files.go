@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -99,7 +98,7 @@ func (f *FileVersion) unmarshalUpgradeFiles(filesToUpgrade interface{}) (*Upgrad
 func (f *FileVersion) writeFile(destinationPath, originPath string, content []byte) error {
 	destination := f.setDefaultPath(destinationPath, originPath)
 
-	if err := ioutil.WriteFile(destination, content, 0666); err != nil {
+	if err := os.WriteFile(destination, content, 0666); err != nil {
 		return fmt.Errorf("error while writing file %s due to: %w", destination, err)
 	}
 

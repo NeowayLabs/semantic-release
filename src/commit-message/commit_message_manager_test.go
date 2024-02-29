@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	commitMessage "github.com/NeowayLabs/semantic-release/src/commit-message"
+	committype "github.com/NeowayLabs/semantic-release/src/commit-type"
 	"github.com/NeowayLabs/semantic-release/src/log"
 	"github.com/NeowayLabs/semantic-release/src/tests"
 )
@@ -22,14 +23,15 @@ func setup(t *testing.T) *fixture {
 		t.Errorf("error while getting log due to %s", err.Error())
 	}
 
-	commitMessageMenager := commitMessage.New(logger)
+	commitType := committype.New(logger)
+	commitMessageMenager := commitMessage.New(logger, commitType)
 
 	return &fixture{log: logger, commitMessageManager: *commitMessageMenager}
 }
 
-func TestPrettifyCommitMessageNoMessageTagError(t *testing.T) {
+func TestPrettifyCommitMessageNoMessageError(t *testing.T) {
 	f := setup(t)
-	message := "type: [feat], MSG: This is a message without message tag."
+	message := "feat(scope):"
 	prettyMessage, err := f.commitMessageManager.PrettifyCommitMessage(message)
 	tests.AssertError(t, err)
 	tests.AssertEmpty(t, prettyMessage)
@@ -37,7 +39,7 @@ func TestPrettifyCommitMessageNoMessageTagError(t *testing.T) {
 
 func TestPrettifyCommitMessageNewLinesSuccess(t *testing.T) {
 	f := setup(t)
-	message := "type: [feat]    \n\n\n\n\nMessage: This is a message with new lines."
+	message := "feat(scope): This is a message with new lines."
 	prettyMessage, err := f.commitMessageManager.PrettifyCommitMessage(message)
 	tests.AssertNoError(t, err)
 	tests.AssertEqualValues(t, "This is a message with new lines.", prettyMessage)
@@ -45,8 +47,8 @@ func TestPrettifyCommitMessageNewLinesSuccess(t *testing.T) {
 
 func TestPrettifyCommitMessageCutSuccess(t *testing.T) {
 	f := setup(t)
-	message := "type: [feat], Message: This is a long message to write to CHANGELOG.md file. Bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo cut here."
+	message := "feat: This is a long message to write to CHANGELOG.md file. Bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo cut here."
 	prettyMessage, err := f.commitMessageManager.PrettifyCommitMessage(message)
 	tests.AssertNoError(t, err)
-	tests.AssertEqualValues(t, "This is a long message to write to changelog.md file. bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo ...", prettyMessage)
+	tests.AssertEqualValues(t, "This is a long message to write to CHANGELOG.md file. Bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo ...", prettyMessage)
 }

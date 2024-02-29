@@ -161,21 +161,28 @@ So the semantic release can find out the commit type to define the upgrade type 
 
 
 ```
-type: [type here].
-message: Commit message here.
+type(scope?): Commit message here.
 ```
 
 I.e.
 ```
-type: [feat]
-message: Added new function to print the Fibonacci sequece.
+feat(fibonacci): Added new function to print the Fibonacci sequece.
 ```
 
-### If you want to complete a Merge Request without triggering the versioning process then you can use one of the skip type tags as follows.
+The scope is optional, so you can also use the fllowing message standard.
 
-- type: [skip]
-- type: [skip v]
-- type: [skip versioning]
+```
+type: Commit message here.
+```
+
+I.e.
+```
+feat: Added new function to print the Fibonacci sequece.
+```
+
+### If you want to complete a Merge Request without triggering the versioning process then you can use the skip type tags as follows.
+
+- skip
 
 ## Adding new tests
 

@@ -16,8 +16,18 @@ type Logger interface {
 	Warn(s string, args ...interface{})
 }
 
+type CommitType interface {
+	GetAll() []string
+	GetMajorUpgrade() []string
+	GetMinorUpgrade() []string
+	GetPatchUpgrade() []string
+	GetSkipVersioning() []string
+	GetCommitChangeType(commitMessage string) (string, error)
+}
+
 type CommitMessage struct {
-	log Logger
+	log        Logger
+	commitType CommitType
 }
 
 func (f *CommitMessage) findMessageTag(commitMessage string) bool {
@@ -32,21 +42,6 @@ func (f *CommitMessage) upperFirstLetterOfSentence(text string) string {
 	return fmt.Sprintf("%s%s", strings.ToUpper(text[:1]), text[1:])
 }
 
-func (f *CommitMessage) getMessage(messageRow string) (string, error) {
-	startPosition := strings.Index(messageRow, messageTag) + len(messageTag)
-
-	if startPosition-1 == len(messageRow)-1 {
-		return "", errors.New("message not found")
-	}
-
-	message := strings.TrimSpace(messageRow[startPosition:])
-	if strings.ReplaceAll(message, " ", "") == "" {
-		return "", errors.New("message not found")
-	}
-
-	return message, nil
-}
-
 // prettifyCommitMessage aims to keep a short message based on the commit message, removing extra information such as commit type.
 // Args:
 //
@@ -57,24 +52,26 @@ func (f *CommitMessage) getMessage(messageRow string) (string, error) {
 //	string: Returns a commit message with limmited number of characters.
 //	err: Error whenever unexpected issues happen.
 func (f *CommitMessage) PrettifyCommitMessage(commitMessage string) (string, error) {
-
-	var message string
 	splitedMessage := strings.Split(commitMessage, "\n")
 
+	message := ""
 	for _, row := range splitedMessage {
-		row := strings.ToLower(row)
-		if f.findMessageTag(row) {
+		if row == "" {
+			continue
+		}
+		index := strings.Index(row, ":")
+		commitTypeScope := strings.ToLower(row[:index])
 
-			currentMessage, err := f.getMessage(row)
-			if err != nil {
-				return "", fmt.Errorf("error while getting message due to: %w", err)
+		for _, changeType := range f.commitType.GetAll() {
+			if strings.Contains(commitTypeScope, changeType) {
+				index := strings.Index(row, ":")
+				message = strings.TrimSpace(strings.Replace(row[index:], ":", "", 1))
 			}
-			message = currentMessage
 		}
 	}
 
 	if message == "" {
-		return "", errors.New("commit message has no tag 'message:'")
+		return "", errors.New("commit message is empty")
 	}
 
 	if f.isMessageLongerThanLimit(message) {
@@ -84,8 +81,33 @@ func (f *CommitMessage) PrettifyCommitMessage(commitMessage string) (string, err
 	return f.upperFirstLetterOfSentence(message), nil
 }
 
-func New(log Logger) *CommitMessage {
+func (f *CommitMessage) IsValidMessage(message string) bool {
+	index := strings.Index(message, ":")
+
+	if index == -1 {
+		f.log.Error("commit message out of pattern")
+		return false
+	}
+
+	if message == "" || message[index:] == "" {
+		f.log.Error("commit message cannot be empty")
+		return false
+	}
+
+	_, err := f.commitType.GetCommitChangeType(message)
+	if err != nil {
+		if err.Error() == "change type not found" {
+			f.log.Error("change type not found")
+		}
+		return false
+	}
+
+	return true
+}
+
+func New(log Logger, commitType CommitType) *CommitMessage {
 	return &CommitMessage{
-		log: log,
+		log:        log,
+		commitType: commitType,
 	}
 }
