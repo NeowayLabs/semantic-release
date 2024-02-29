@@ -16,6 +16,14 @@ const (
 	colorBGRed  = "\033[41;1;37m"
 )
 
+type CommitMessageManager interface {
+	IsValidMessage(message string) bool
+}
+
+type CommitType interface {
+	GetCommitChangeType(commitMessage string) (string, error)
+}
+
 type Logger interface {
 	Info(s string, args ...interface{})
 	Error(s string, args ...interface{})
@@ -33,7 +41,6 @@ type RepositoryVersionControl interface {
 }
 
 type VersionControl interface {
-	GetCommitChangeType(commitMessage string) (string, error)
 	GetNewVersion(commitMessage string, currentVersion string) (string, error)
 	MustSkipVersioning(commitMessage string) bool
 }
@@ -60,6 +67,8 @@ type Semantic struct {
 	repoVersionControl    RepositoryVersionControl
 	versionControl        VersionControl
 	filesVersionControl   FilesVersionControl
+	commitMessageManager  CommitMessageManager
+	commitType            CommitType
 }
 
 func (s *Semantic) GenerateNewRelease() error {
@@ -83,7 +92,7 @@ func (s *Semantic) GenerateNewRelease() error {
 
 	changesInfo.NewVersion = newVersion
 
-	commitChangeType, err := s.versionControl.GetCommitChangeType(changesInfo.Message)
+	commitChangeType, err := s.commitType.GetCommitChangeType(changesInfo.Message)
 	if err != nil {
 		return fmt.Errorf("error while getting commit change type due to: %s", err.Error())
 	}
@@ -116,39 +125,26 @@ func (s *Semantic) GenerateNewRelease() error {
 	return nil
 }
 
-func (s *Semantic) isValidMessage(message string) bool {
-	_, err := s.versionControl.GetCommitChangeType(message)
-	if err != nil {
-		if err.Error() == "change type not found" {
-			s.log.Error("change type not found")
-		}
-		return false
-	}
-
-	return strings.Contains(strings.ToLower(message), "message:")
-}
-
 func (s *Semantic) CommitLint() error {
 	commitHistoryDiff := s.repoVersionControl.GetCommitHistoryDiff()
-
 	areThereWrongCommits := false
 	for _, commit := range commitHistoryDiff {
-		if !s.isValidMessage(commit.Message) {
+		if !s.commitMessageManager.IsValidMessage(commit.Message) {
 			s.log.Error(colorRed+"commit message "+colorYellow+"( %s )"+colorRed+" does not meet semantic-release pattern "+colorYellow+"( type: [commit type], message: message here.)"+colorReset, strings.TrimSuffix(commit.Message, "\n"))
 			areThereWrongCommits = true
 		}
 	}
 	if areThereWrongCommits {
-		s.log.Error(colorRed + "You can use " + colorBGRed + "git rebase -i HEAD~n" + colorReset + colorRed + " and edit the commit list with reword before each commit message." + colorReset)
+		s.log.Error(colorRed + "You can use " + colorBGRed + "git rebase -i HEAD~<number of commits to fix>" + colorReset + colorRed + " and edit the commit list with reword before each commit message." + colorReset)
 		return errors.New("commit messages dos not meet semantic-release pattern")
 	}
 
-	s.log.Info(colorRed + "Remember to adapt the " + colorBGRed + "MERGE REQUEST TITLE" + colorRed + " or the " + colorBGRed + "MERGE COMMIT MESSAGE" + colorRed + " to semantic-release standards so it can properlly generate the new tag release." + colorReset)
+	s.log.Info(colorRed + "Remember to adapt the " + colorBGRed + "MERGE REQUEST TITLE" + colorReset + colorRed + " or the " + colorBGRed + "MERGE COMMIT MESSAGE" + colorReset + colorRed + " to semantic-release standards so it can properlly generate the new tag release." + colorReset)
 
 	return nil
 }
 
-func New(log Logger, rootPath string, filesToUpdateVariable interface{}, repoVersionControl RepositoryVersionControl, filesVersionControl FilesVersionControl, versionControl VersionControl) *Semantic {
+func New(log Logger, rootPath string, filesToUpdateVariable interface{}, repoVersionControl RepositoryVersionControl, filesVersionControl FilesVersionControl, versionControl VersionControl, commitMessageManager CommitMessageManager, commitType CommitType) *Semantic {
 	return &Semantic{
 		log:                   log,
 		rootPath:              rootPath,
@@ -156,5 +152,7 @@ func New(log Logger, rootPath string, filesToUpdateVariable interface{}, repoVer
 		repoVersionControl:    repoVersionControl,
 		filesVersionControl:   filesVersionControl,
 		versionControl:        versionControl,
+		commitMessageManager:  commitMessageManager,
+		commitType:            commitType,
 	}
 }

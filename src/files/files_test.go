@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	commitmessage "github.com/NeowayLabs/semantic-release/src/commit-message"
+	committype "github.com/NeowayLabs/semantic-release/src/commit-type"
 	"github.com/NeowayLabs/semantic-release/src/files"
 	"github.com/NeowayLabs/semantic-release/src/log"
 	"github.com/NeowayLabs/semantic-release/src/tests"
@@ -57,7 +58,8 @@ func setup(t *testing.T) *fixture {
 }
 
 func (f *fixture) newFiles() *files.FileVersion {
-	commitMessageManager := commitmessage.New(f.log)
+	commitType := committype.New(f.log)
+	commitMessageManager := commitmessage.New(f.log, commitType)
 
 	return files.New(f.log, printElapsedTimeMock, f.versionControlHost, f.repositoryRootPath, f.groupName, f.projectName, commitMessageManager)
 }
@@ -136,7 +138,7 @@ func TestUpgradeChangeLogNoError(t *testing.T) {
 		Hash:           "b25a9af78c30de0d03ca2ee6d18c66bbc4804395",
 		AuthorName:     "Administrator",
 		AuthorEmail:    "admin@git.com",
-		Message:        "type: [feat], Message: This is a short message to write to CHANGELOG.md file.",
+		Message:        "feat(scope): This is a short message to write to CHANGELOG.md file.",
 		CurrentVersion: "1.0.1",
 		NewVersion:     "1.1.0",
 		ChangeType:     "feat",
@@ -157,7 +159,7 @@ func TestUpgradeChangeLogLongMessageCutNoError(t *testing.T) {
 		Hash:           "b25a9af78c30de0d03ca2ee6d18c66bbc4804395",
 		AuthorName:     "Administrator",
 		AuthorEmail:    "admin@git.com",
-		Message:        "type: [feat], Message: This is a long message to write to CHANGELOG.md file. Bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo cut here.",
+		Message:        "feat: This is a long message to write to CHANGELOG.md file. Bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo cut here.",
 		CurrentVersion: "1.0.1",
 		NewVersion:     "1.1.0",
 		ChangeType:     "feat",
@@ -300,43 +302,7 @@ func TestUpgradeChangeLogMessageNotFoundError(t *testing.T) {
 
 	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
 	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "error while formatting changelog content due to: prettify commit message error: error while getting message due to: message not found", err.Error())
-}
-
-func TestUpgradeChangeLogTagMessageNotFoundEmptyError(t *testing.T) {
-	f := setup(t)
-	filesVersion := f.newFiles()
-
-	changelog := ChangesInfoMock{
-		AuthorName:     "Administrator",
-		AuthorEmail:    "admin@git.com",
-		ChangeType:     "feat",
-		Hash:           "b25a9af",
-		Message:        "message:  ",
-		CurrentVersion: "1.0.0",
-		NewVersion:     "1.1.0"}
-
-	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
-	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "error while formatting changelog content due to: prettify commit message error: error while getting message due to: message not found", err.Error())
-}
-
-func TestUpgradeChangeLogTagMessageNotFoundError(t *testing.T) {
-	f := setup(t)
-	filesVersion := f.newFiles()
-
-	changelog := ChangesInfoMock{
-		AuthorName:     "Administrator",
-		AuthorEmail:    "admin@git.com",
-		ChangeType:     "feat",
-		Hash:           "b25a9af",
-		Message:        "type: [feat]",
-		CurrentVersion: "1.0.0",
-		NewVersion:     "1.1.0"}
-
-	err := filesVersion.UpgradeChangeLog("mock/CHANGELOG_MOCK.md", "", changelog)
-	tests.AssertError(t, err)
-	tests.AssertEqualValues(t, "error while formatting changelog content due to: prettify commit message error: commit message has no tag 'message:'", err.Error())
+	tests.AssertEqualValues(t, "error while formatting changelog content due to: prettify commit message error: commit message is empty", err.Error())
 }
 
 func TestUpgradeChangeLogOpenFileError(t *testing.T) {
@@ -348,7 +314,7 @@ func TestUpgradeChangeLogOpenFileError(t *testing.T) {
 		AuthorEmail:    "admin@git.com",
 		ChangeType:     "feat",
 		Hash:           "b25a9af",
-		Message:        "type: [feat], message: Test.",
+		Message:        "feat(scope): Test message.",
 		CurrentVersion: "1.0.0",
 		NewVersion:     "1.1.0"}
 
@@ -368,7 +334,7 @@ func TestUpgradeChangeLogWriteFileError(t *testing.T) {
 		Hash:           "b25a9af78c30de0d03ca2ee6d18c66bbc4804395",
 		AuthorName:     "Administrator",
 		AuthorEmail:    "admin@git.com",
-		Message:        "type: [feat], Message: This is a short message to write to CHANGELOG.md file.",
+		Message:        "feat(scope): This is a short message to write to CHANGELOG.md file.",
 		CurrentVersion: "1.0.1",
 		NewVersion:     "1.1.0",
 		ChangeType:     "feat",

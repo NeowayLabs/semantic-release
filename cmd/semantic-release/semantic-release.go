@@ -6,6 +6,7 @@ import (
 	"os"
 
 	commitmessage "github.com/NeowayLabs/semantic-release/src/commit-message"
+	committype "github.com/NeowayLabs/semantic-release/src/commit-type"
 	"github.com/NeowayLabs/semantic-release/src/files"
 	"github.com/NeowayLabs/semantic-release/src/git"
 	"github.com/NeowayLabs/semantic-release/src/log"
@@ -80,6 +81,8 @@ func main() {
 			logger.Info(colorYellow + "\nSemantic Version commit lint started...\n\n" + colorReset)
 			err := semantic.CommitLint()
 			if err != nil {
+				printCommitTypes()
+				printCommitMessageExample()
 				os.Exit(1)
 			}
 		} else {
@@ -186,11 +189,12 @@ func printCommitTypes() {
 func printCommitMessageExample() {
 	fmt.Println(colorYellow + "\nCOMMIT MESSAGE PATTERN" + colorReset)
 	fmt.Println("\nThe commit message must follow the pattern below.")
-	fmt.Println("\n\ttype [commit type here], message: Commit subject here.")
+	fmt.Println("\n\ttype(optional scope): Commit subject message here.")
 	fmt.Println(colorYellow + "\n\tI.e." + colorReset)
-	fmt.Println("\t\ttype [feat], message: Added new feature to handle postgresql database connection.")
+	fmt.Println("\t\tfeat(config): Added new feature to handle configs.")
 
-	fmt.Println("\n\tNote: The maximum number of characters is 150. If the commit subject exceeds it, it will be cut, keeping only the first 150 characters.")
+	fmt.Println("\n\tNote 1: The (scope) is optional. Semantic-release accepts the following pattern: \"type: Commit subject message here\".")
+	fmt.Println("\n\tNote 2: The maximum number of characters is 150. If the commit subject exceeds it, it will be cut, keeping only the first 150 characters.")
 }
 
 func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, username, password *string, upgradePyFile *bool, branchName *string) *semantic.Semantic {
@@ -206,11 +210,12 @@ func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, grou
 		logger.Fatal(err.Error())
 	}
 
-	commitMessageManager := commitmessage.New(logger)
+	commitTypeManager := committype.New(logger)
+	commitMessageManager := commitmessage.New(logger, commitTypeManager)
 
 	filesVersionControl := files.New(logger, timer.PrintElapsedTime, *gitHost, repositoryRootPath, *groupName, *projectName, commitMessageManager)
 
-	versionControl := v.NewVersionControl(logger, timer.PrintElapsedTime)
+	versionControl := v.NewVersionControl(logger, timer.PrintElapsedTime, commitTypeManager)
 
-	return semantic.New(logger, repositoryRootPath, addFilesToUpgradeList(upgradePyFile, repositoryRootPath), repoVersionControl, filesVersionControl, versionControl)
+	return semantic.New(logger, repositoryRootPath, addFilesToUpgradeList(upgradePyFile, repositoryRootPath), repoVersionControl, filesVersionControl, versionControl, commitMessageManager, commitTypeManager)
 }

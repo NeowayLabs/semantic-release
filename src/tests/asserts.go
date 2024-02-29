@@ -28,6 +28,15 @@ func AssertEqualValues(t *testing.T, expected, actual interface{}) {
 	}
 }
 
+func AssertDeepEqualValues(t *testing.T, expected, actual interface{}) {
+	t.Helper()
+	if !reflect.DeepEqual(expected, actual) {
+		t.Errorf("Not equal: \n"+
+			"expected: %v\n"+
+			"actual  : %v", expected, actual)
+	}
+}
+
 func AssertDiffValues(t *testing.T, expected, actual interface{}) {
 	t.Helper()
 	if expected == actual {
