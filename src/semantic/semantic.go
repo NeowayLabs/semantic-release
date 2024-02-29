@@ -130,7 +130,7 @@ func (s *Semantic) CommitLint() error {
 	areThereWrongCommits := false
 	for _, commit := range commitHistoryDiff {
 		if !s.commitMessageManager.IsValidMessage(commit.Message) {
-			s.log.Error(colorRed+"commit message "+colorYellow+"( %s )"+colorRed+" does not meet semantic-release pattern "+colorYellow+"( type: [commit type], message: message here.)"+colorReset, strings.TrimSuffix(commit.Message, "\n"))
+			s.log.Error(colorRed+"commit message "+colorYellow+"( %s )"+colorRed+" does not meet semantic-release pattern "+colorYellow+"(type(scope?): message here.)"+colorReset, strings.TrimSuffix(commit.Message, "\n"))
 			areThereWrongCommits = true
 		}
 	}
