@@ -124,6 +124,3 @@ githooks:
 
 shell: modcache imagedev
 	$(run) sh
-
-pre-commit-install:
-	./hack/set-pre-commit.sh
