@@ -55,10 +55,11 @@ func (c *CommitType) GetScope(commitMessage string) string {
 	re := regexp.MustCompile(`\((.*?)\)`)
 
 	for _, row := range splitedMessage {
-		if row == "" {
+		index := strings.Index(row, ":")
+
+		if c.IndexNotFound(index) || row == " " {
 			continue
 		}
-		index := strings.Index(row, ":")
 		commitTypeScope := strings.ToLower(row[:index])
 
 		if c.isValidCommitType(commitTypeScope) {
@@ -74,6 +75,10 @@ func (c *CommitType) GetScope(commitMessage string) string {
 	return "default"
 }
 
+func (c *CommitType) IndexNotFound(index int) bool {
+	return index == -1
+}
+
 // GetCommitChangeType get the commit type from Message
 // I.e.:
 //
@@ -85,10 +90,12 @@ func (c *CommitType) GetCommitChangeType(commitMessage string) (string, error) {
 	splitedMessage := strings.Split(commitMessage, "\n")
 
 	for _, row := range splitedMessage {
-		if row == "" {
+		index := strings.Index(row, ":")
+
+		if c.IndexNotFound(index) || row == " " {
 			continue
 		}
-		index := strings.Index(row, ":")
+
 		commitTypeScope := strings.ToLower(row[:index])
 
 		for _, changeType := range c.GetAll() {

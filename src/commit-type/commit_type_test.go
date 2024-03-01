@@ -76,3 +76,29 @@ func TestGetScopeSuccess(t *testing.T) {
 	actualScope := f.commitType.GetScope("fix(scope): this is the message")
 	tests.AssertDeepEqualValues(t, "scope", actualScope)
 }
+
+func TestGetCommitChangeTypeNotFoundError(t *testing.T) {
+	f := setup(t)
+	message := "wrong type(scope): This is a sample message"
+	actualType, err := f.commitType.GetCommitChangeType(message)
+	tests.AssertError(t, err)
+	tests.AssertEqualValues(t, "", actualType)
+}
+
+func TestGetCommitChangeTypeSuccess(t *testing.T) {
+	f := setup(t)
+	expected := "fix"
+	message := "fix(scope): This is a sample message"
+	actualType, err := f.commitType.GetCommitChangeType(message)
+	tests.AssertNoError(t, err)
+	tests.AssertEqualValues(t, expected, actualType)
+}
+
+func TestGetCommitChangeTypeNewLinesSuccess(t *testing.T) {
+	f := setup(t)
+	expected := "feat"
+	message := "Merge branch 'sample-branch' into 'master'\n\nfeat(scope): This is a message with new lines.\n\nSee merge request gitgroup/semantic-tests!1"
+	actualType, err := f.commitType.GetCommitChangeType(message)
+	tests.AssertNoError(t, err)
+	tests.AssertEqualValues(t, expected, actualType)
+}
