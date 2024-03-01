@@ -15,19 +15,19 @@ type CommitType struct {
 }
 
 func (c *CommitType) GetAll() []string {
-	return []string{"build", "ci", "docs", "fix", "feat", "perf", "refactor", "style", "test", "breaking change", "breaking changes", "skip"}
+	return []string{"build", "ci", "docs", "fix", "feat", "feature", "feature", "perf", "performance", "refactor", "style", "test", "bc", "breaking", "breaking change", "skip"}
 }
 
 func (c *CommitType) GetMajorUpgrade() []string {
-	return []string{"breaking change", "breaking changes"}
+	return []string{"bc", "breaking", "breaking change"}
 }
 
 func (c *CommitType) GetMinorUpgrade() []string {
-	return []string{"feat"}
+	return []string{"feat", "feature"}
 }
 
 func (c *CommitType) GetPatchUpgrade() []string {
-	return []string{"build", "ci", "docs", "fix", "perf", "refactor", "style", "test"}
+	return []string{"build", "ci", "docs", "documentation", "fix", "perf", "performance", "refactor", "style", "test"}
 }
 
 func (c *CommitType) GetSkipVersioning() []string {

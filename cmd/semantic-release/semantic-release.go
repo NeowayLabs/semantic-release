@@ -174,16 +174,19 @@ func printCommitTypes() {
 	fmt.Println(colorYellow + "\n\t*            [build]" + colorReset + ": Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)")
 	fmt.Println(colorYellow + "\t*               [ci]" + colorReset + ": Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)")
 	fmt.Println(colorYellow + "\t*             [docs]" + colorReset + ": Documentation only changes")
+	fmt.Println(colorYellow + "\t*    [documentation]" + colorReset + ": ||")
 	fmt.Println(colorYellow + "\t*             [feat]" + colorReset + ": A new feature")
+	fmt.Println(colorYellow + "\t*          [feature]" + colorReset + ": ||")
 	fmt.Println(colorYellow + "\t*              [fix]" + colorReset + ": A bug fix")
 	fmt.Println(colorYellow + "\t*             [perf]" + colorReset + ": A code change that improves performance")
+	fmt.Println(colorYellow + "\t*      [performance]" + colorReset + ": ||")
 	fmt.Println(colorYellow + "\t*         [refactor]" + colorReset + ": A code change that neither fixes a bug nor adds a feature")
 	fmt.Println(colorYellow + "\t*            [style]" + colorReset + ": Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)")
 	fmt.Println(colorYellow + "\t*             [test]" + colorReset + ": Adding missing tests or correcting existing tests")
 	fmt.Println(colorYellow + "\t*             [skip]" + colorReset + ": Skip versioning")
-	fmt.Println(colorYellow + "\t*  [skip versioning]" + colorReset + ": Skip versioning")
-	fmt.Println(colorYellow + "\t*  [breaking change]" + colorReset + ": Change that will require other changes in dependant applications")
-	fmt.Println(colorYellow + "\t* [breaking changes]" + colorReset + ": Changes that will require other changes in dependant applications")
+	fmt.Println(colorYellow + "\t*               [bc]" + colorReset + ": Changes that will require other changes in dependant applications")
+	fmt.Println(colorYellow + "\t*         [breaking]" + colorReset + ": ||")
+	fmt.Println(colorYellow + "\t*  [breaking change]" + colorReset + ": ||")
 }
 
 func printCommitMessageExample() {
