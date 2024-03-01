@@ -39,7 +39,7 @@ func TestPrettifyCommitMessageNoMessageError(t *testing.T) {
 
 func TestPrettifyCommitMessageNewLinesSuccess(t *testing.T) {
 	f := setup(t)
-	message := "feat(scope): This is a message with new lines."
+	message := "Merge branch 'sample-branch' into 'master'\n\nfeat(scope): This is a message with new lines.\n\nSee merge request gitgroup/semantic-tests!1"
 	prettyMessage, err := f.commitMessageManager.PrettifyCommitMessage(message)
 	tests.AssertNoError(t, err)
 	tests.AssertEqualValues(t, "This is a message with new lines.", prettyMessage)

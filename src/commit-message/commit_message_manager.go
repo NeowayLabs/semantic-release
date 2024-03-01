@@ -23,6 +23,7 @@ type CommitType interface {
 	GetPatchUpgrade() []string
 	GetSkipVersioning() []string
 	GetCommitChangeType(commitMessage string) (string, error)
+	IndexNotFound(index int) bool
 }
 
 type CommitMessage struct {
@@ -56,10 +57,12 @@ func (f *CommitMessage) PrettifyCommitMessage(commitMessage string) (string, err
 
 	message := ""
 	for _, row := range splitedMessage {
-		if row == "" {
+		index := strings.Index(row, ":")
+
+		if f.commitType.IndexNotFound(index) || row == " " {
 			continue
 		}
-		index := strings.Index(row, ":")
+
 		commitTypeScope := strings.ToLower(row[:index])
 
 		for _, changeType := range f.commitType.GetAll() {
