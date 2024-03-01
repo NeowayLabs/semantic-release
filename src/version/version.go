@@ -89,11 +89,11 @@ func (v *VersionControl) splitVersionMajorMinorPatch(version string) (map[string
 //	PATCH: if the commit type is in CommitChangeTypePatchUpgrade slice
 //	Otherwise, it returns an error
 func (v *VersionControl) getUpgradeType(commitChangeType string) (string, error) {
-	if v.hasStringInSlice(commitChangeType, v.commitType.GetMajorUpgrade()) {
+	if hasStringInSlice(commitChangeType, v.commitType.GetMajorUpgrade()) {
 		return major, nil
-	} else if v.hasStringInSlice(commitChangeType, v.commitType.GetMinorUpgrade()) {
+	} else if hasStringInSlice(commitChangeType, v.commitType.GetMinorUpgrade()) {
 		return minor, nil
-	} else if v.hasStringInSlice(commitChangeType, v.commitType.GetPatchUpgrade()) {
+	} else if hasStringInSlice(commitChangeType, v.commitType.GetPatchUpgrade()) {
 		return patch, nil
 	}
 	return "", fmt.Errorf("%s is an invalid upgrade change type", commitChangeType)
@@ -194,7 +194,7 @@ func (v *VersionControl) GetNewVersion(commitMessage string, currentVersion stri
 // Returns:
 //
 //	bool: True when found, otherwise false.
-func (v *VersionControl) hasStringInSlice(value string, slice []string) bool {
+func hasStringInSlice(value string, slice []string) bool {
 	for i := range slice {
 		if slice[i] == value {
 			return true
@@ -215,7 +215,7 @@ func (v *VersionControl) MustSkipVersioning(commitMessage string) bool {
 		return true
 	}
 
-	return v.hasStringInSlice(commitChangeType, v.commitType.GetSkipVersioning())
+	return hasStringInSlice(commitChangeType, v.commitType.GetSkipVersioning())
 }
 
 // NewVersionControl is the version control constructor
