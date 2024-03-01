@@ -92,7 +92,7 @@ func (c *CommitType) GetCommitChangeType(commitMessage string) (string, error) {
 	for _, row := range splitedMessage {
 		index := strings.Index(row, ":")
 
-		if c.IndexNotFound(index) || row == " " {
+		if c.IndexNotFound(index) || row == "" {
 			continue
 		}
 

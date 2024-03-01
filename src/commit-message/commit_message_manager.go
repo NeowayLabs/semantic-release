@@ -6,10 +6,6 @@ import (
 	"strings"
 )
 
-const (
-	messageTag = "message:"
-)
-
 type Logger interface {
 	Info(s string, args ...interface{})
 	Error(s string, args ...interface{})
@@ -29,10 +25,6 @@ type CommitType interface {
 type CommitMessage struct {
 	log        Logger
 	commitType CommitType
-}
-
-func (f *CommitMessage) findMessageTag(commitMessage string) bool {
-	return strings.Contains(strings.ToLower(commitMessage), messageTag)
 }
 
 func (f *CommitMessage) isMessageLongerThanLimit(message string) bool {
@@ -59,7 +51,7 @@ func (f *CommitMessage) PrettifyCommitMessage(commitMessage string) (string, err
 	for _, row := range splitedMessage {
 		index := strings.Index(row, ":")
 
-		if f.commitType.IndexNotFound(index) || row == " " {
+		if f.commitType.IndexNotFound(index) || row == "" {
 			continue
 		}
 
@@ -67,7 +59,6 @@ func (f *CommitMessage) PrettifyCommitMessage(commitMessage string) (string, err
 
 		for _, changeType := range f.commitType.GetAll() {
 			if strings.Contains(commitTypeScope, changeType) {
-				index := strings.Index(row, ":")
 				message = strings.TrimSpace(strings.Replace(row[index:], ":", "", 1))
 			}
 		}
@@ -87,12 +78,12 @@ func (f *CommitMessage) PrettifyCommitMessage(commitMessage string) (string, err
 func (f *CommitMessage) IsValidMessage(message string) bool {
 	index := strings.Index(message, ":")
 
-	if index == -1 {
+	if f.commitType.IndexNotFound(index) {
 		f.log.Error("commit message out of pattern")
 		return false
 	}
 
-	if message == "" || message[index:] == "" {
+	if message == "" || message[index:] == ":" {
 		f.log.Error("commit message cannot be empty")
 		return false
 	}
