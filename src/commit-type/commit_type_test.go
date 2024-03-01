@@ -27,7 +27,7 @@ func setup(t *testing.T) *fixture {
 
 func TestGetAll(t *testing.T) {
 	f := setup(t)
-	expected := []string{"build", "ci", "docs", "fix", "feat", "perf", "refactor", "style", "test", "breaking change", "breaking changes", "skip"}
+	expected := []string{"build", "ci", "docs", "fix", "feat", "feature", "feature", "perf", "performance", "refactor", "style", "test", "bc", "breaking", "breaking change", "skip"}
 	actual := f.commitType.GetAll()
 
 	tests.AssertDeepEqualValues(t, expected, actual)
@@ -35,7 +35,7 @@ func TestGetAll(t *testing.T) {
 
 func TestGetMajorUpgrade(t *testing.T) {
 	f := setup(t)
-	expected := []string{"breaking change", "breaking changes"}
+	expected := []string{"bc", "breaking", "breaking change"}
 	actual := f.commitType.GetMajorUpgrade()
 
 	tests.AssertDeepEqualValues(t, expected, actual)
@@ -43,7 +43,7 @@ func TestGetMajorUpgrade(t *testing.T) {
 
 func TestGetMinorUpgrade(t *testing.T) {
 	f := setup(t)
-	expected := []string{"feat"}
+	expected := []string{"feat", "feature"}
 	actual := f.commitType.GetMinorUpgrade()
 
 	tests.AssertDeepEqualValues(t, expected, actual)
@@ -51,7 +51,7 @@ func TestGetMinorUpgrade(t *testing.T) {
 
 func TestGetPatchUpgrade(t *testing.T) {
 	f := setup(t)
-	expected := []string{"build", "ci", "docs", "fix", "perf", "refactor", "style", "test"}
+	expected := []string{"build", "ci", "docs", "documentation", "fix", "perf", "performance", "refactor", "style", "test"}
 	actual := f.commitType.GetPatchUpgrade()
 
 	tests.AssertDeepEqualValues(t, expected, actual)
