@@ -29,7 +29,7 @@ func setup(t *testing.T) *fixture {
 	return &fixture{log: logger, commitMessageManager: *commitMessageMenager}
 }
 
-func TestPrettifyCommitMessageNoMessageError(t *testing.T) {
+func TestPrettifyCommitMessageNoMessageEmptyError(t *testing.T) {
 	f := setup(t)
 	message := "feat(scope):"
 	prettyMessage, err := f.commitMessageManager.PrettifyCommitMessage(message)
@@ -51,4 +51,46 @@ func TestPrettifyCommitMessageCutSuccess(t *testing.T) {
 	prettyMessage, err := f.commitMessageManager.PrettifyCommitMessage(message)
 	tests.AssertNoError(t, err)
 	tests.AssertEqualValues(t, "This is a long message to write to CHANGELOG.md file. Bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo bar foo ...", prettyMessage)
+}
+
+func TestIsValidMessageSuccess(t *testing.T) {
+	f := setup(t)
+	message := "Merge branch 'sample-branch' into 'master'\n\nfeat(scope): This is a message with new lines.\n\nSee merge request gitgroup/semantic-tests!1"
+	actual := f.commitMessageManager.IsValidMessage(message)
+	tests.AssertTrue(t, actual)
+
+	message = "feat(scope): This is a message"
+	actual = f.commitMessageManager.IsValidMessage(message)
+	tests.AssertTrue(t, actual)
+
+	message = "feat: This is a message"
+	actual = f.commitMessageManager.IsValidMessage(message)
+	tests.AssertTrue(t, actual)
+}
+
+func TestIsValidMessageFalse(t *testing.T) {
+	f := setup(t)
+	message := "Merge branch 'sample-branch' into 'master'\n\nfeat(scope) This is a message with new lines.\n\nSee merge request gitgroup/semantic-tests!1"
+	actual := f.commitMessageManager.IsValidMessage(message)
+	tests.AssertFalse(t, actual)
+
+	message = "feat(scope):"
+	actual = f.commitMessageManager.IsValidMessage(message)
+	tests.AssertFalse(t, actual)
+
+	message = "feat:"
+	actual = f.commitMessageManager.IsValidMessage(message)
+	tests.AssertFalse(t, actual)
+
+	message = "feat This is a message with new lines"
+	actual = f.commitMessageManager.IsValidMessage(message)
+	tests.AssertFalse(t, actual)
+
+	message = ""
+	actual = f.commitMessageManager.IsValidMessage(message)
+	tests.AssertFalse(t, actual)
+
+	message = "wrong type(scope): This is a message"
+	actual = f.commitMessageManager.IsValidMessage(message)
+	tests.AssertFalse(t, actual)
 }
