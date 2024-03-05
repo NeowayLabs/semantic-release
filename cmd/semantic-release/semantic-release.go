@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	commitmessage "github.com/NeowayLabs/semantic-release/src/commit-message"
+	committype "github.com/NeowayLabs/semantic-release/src/commit-type"
 	"github.com/NeowayLabs/semantic-release/src/files"
 	"github.com/NeowayLabs/semantic-release/src/git"
 	"github.com/NeowayLabs/semantic-release/src/log"
@@ -37,6 +39,8 @@ func main() {
 	helpCmd := flag.NewFlagSet("help", flag.ExitOnError)
 	helpCommitCmd := flag.NewFlagSet("help-cmt", flag.ExitOnError)
 
+	commitLint := upgradeVersionCmd.Bool("commit-lint", false, "Only lint commit history if set as true. (default false)")
+	branchName := upgradeVersionCmd.String("branch-name", "", "Branch name to be cloned.")
 	gitHost := upgradeVersionCmd.String("git-host", "", "Git host name. I.e.: gitlab.integration-tests.com. (required)")
 	groupName := upgradeVersionCmd.String("git-group", "", "Git group name. (required)")
 	projectName := upgradeVersionCmd.String("git-project", "", "Git project name. (required)")
@@ -67,15 +71,28 @@ func main() {
 	case "up":
 		logger.Info(colorYellow + "\nSemantic Version just started the process...\n\n" + colorReset)
 
-		semantic := newSemantic(logger, upgradeVersionCmd, gitHost, groupName, projectName, username, password, upgradePyFile)
+		semantic := newSemantic(logger, upgradeVersionCmd, gitHost, groupName, projectName, username, password, upgradePyFile, branchName)
 
-		if err := semantic.GenerateNewRelease(); err != nil {
-			logger.Error(err.Error())
-			os.Exit(1)
+		if *commitLint {
+			if *branchName == "" {
+				logger.Error(colorRed + "\nThe argument -branch-name must be set when --commit-lint is true.\n\n" + colorReset)
+			}
+
+			logger.Info(colorYellow + "\nSemantic Version commit lint started...\n\n" + colorReset)
+			err := semantic.CommitLint()
+			if err != nil {
+				printCommitTypes()
+				printCommitMessageExample()
+				os.Exit(1)
+			}
+		} else {
+			if err := semantic.GenerateNewRelease(); err != nil {
+				logger.Error(err.Error())
+				os.Exit(1)
+			}
 		}
 
 		logger.Info(colorYellow + "\nDone!" + colorReset)
-
 	case "help":
 		printMainCommands()
 		helpCmd.PrintDefaults()
@@ -112,7 +129,6 @@ func addFilesToUpgradeList(upgradePyFile *bool, repositoryRootPath string) Upgra
 }
 
 func validateIncomingParams(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, username, password *string, upgradePyFile *bool) {
-
 	if *gitHost == "" {
 		logger.Info(colorRed + "Oops! Git host name must be specified." + colorReset + "[docker run neowaylabs/semantic-release up " + colorYellow + "-git-host gitHostNameHere]" + colorReset)
 		os.Exit(1)
@@ -158,29 +174,33 @@ func printCommitTypes() {
 	fmt.Println(colorYellow + "\n\t*            [build]" + colorReset + ": Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)")
 	fmt.Println(colorYellow + "\t*               [ci]" + colorReset + ": Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)")
 	fmt.Println(colorYellow + "\t*             [docs]" + colorReset + ": Documentation only changes")
+	fmt.Println(colorYellow + "\t*    [documentation]" + colorReset + ": ||")
 	fmt.Println(colorYellow + "\t*             [feat]" + colorReset + ": A new feature")
+	fmt.Println(colorYellow + "\t*          [feature]" + colorReset + ": ||")
 	fmt.Println(colorYellow + "\t*              [fix]" + colorReset + ": A bug fix")
 	fmt.Println(colorYellow + "\t*             [perf]" + colorReset + ": A code change that improves performance")
+	fmt.Println(colorYellow + "\t*      [performance]" + colorReset + ": ||")
 	fmt.Println(colorYellow + "\t*         [refactor]" + colorReset + ": A code change that neither fixes a bug nor adds a feature")
 	fmt.Println(colorYellow + "\t*            [style]" + colorReset + ": Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)")
 	fmt.Println(colorYellow + "\t*             [test]" + colorReset + ": Adding missing tests or correcting existing tests")
 	fmt.Println(colorYellow + "\t*             [skip]" + colorReset + ": Skip versioning")
-	fmt.Println(colorYellow + "\t*  [skip versioning]" + colorReset + ": Skip versioning")
-	fmt.Println(colorYellow + "\t*  [breaking change]" + colorReset + ": Change that will require other changes in dependant applications")
-	fmt.Println(colorYellow + "\t* [breaking changes]" + colorReset + ": Changes that will require other changes in dependant applications")
+	fmt.Println(colorYellow + "\t*               [bc]" + colorReset + ": Changes that will require other changes in dependant applications")
+	fmt.Println(colorYellow + "\t*         [breaking]" + colorReset + ": ||")
+	fmt.Println(colorYellow + "\t*  [breaking change]" + colorReset + ": ||")
 }
 
 func printCommitMessageExample() {
 	fmt.Println(colorYellow + "\nCOMMIT MESSAGE PATTERN" + colorReset)
 	fmt.Println("\nThe commit message must follow the pattern below.")
-	fmt.Println("\n\ttype [commit type here], message: Commit subject here.")
+	fmt.Println("\n\ttype(optional scope): Commit subject message here.")
 	fmt.Println(colorYellow + "\n\tI.e." + colorReset)
-	fmt.Println("\t\ttype [feat], message: Added new feature to handle postgresql database connection.")
+	fmt.Println("\t\tfeat(config): Added new feature to handle configs.")
 
-	fmt.Println("\n\tNote: The maximum number of characters is 150. If the commit subject exceeds it, it will be cut, keeping only the first 150 characters.")
+	fmt.Println("\n\tNote 1: The (scope) is optional. Semantic-release accepts the following pattern: \"type: Commit subject message here\".")
+	fmt.Println("\n\tNote 2: The maximum number of characters is 150. If the commit subject exceeds it, it will be cut, keeping only the first 150 characters.")
 }
 
-func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, username, password *string, upgradePyFile *bool) *semantic.Semantic {
+func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, groupName, projectName, username, password *string, upgradePyFile *bool, branchName *string) *semantic.Semantic {
 
 	validateIncomingParams(logger, upgradeVersionCmd, gitHost, groupName, projectName, username, password, upgradePyFile)
 
@@ -188,14 +208,17 @@ func newSemantic(logger *log.Log, upgradeVersionCmd *flag.FlagSet, gitHost, grou
 	repositoryRootPath := fmt.Sprintf("%s/%s", homePath, *projectName)
 
 	url := fmt.Sprintf("https://%s:%s@%s/%s/%s.git", *username, *password, *gitHost, *groupName, *projectName)
-	repoVersionControl, err := git.New(logger, timer.PrintElapsedTime, url, *username, *password, repositoryRootPath)
+	repoVersionControl, err := git.New(logger, timer.PrintElapsedTime, url, *username, *password, repositoryRootPath, *branchName)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
 
-	filesVersionControl := files.New(logger, timer.PrintElapsedTime, *gitHost, repositoryRootPath, *groupName, *projectName)
+	commitTypeManager := committype.New(logger)
+	commitMessageManager := commitmessage.New(logger, commitTypeManager)
 
-	versionControl := v.NewVersionControl(logger, timer.PrintElapsedTime)
+	filesVersionControl := files.New(logger, timer.PrintElapsedTime, *gitHost, repositoryRootPath, *groupName, *projectName, commitMessageManager)
 
-	return semantic.New(logger, repositoryRootPath, addFilesToUpgradeList(upgradePyFile, repositoryRootPath), repoVersionControl, filesVersionControl, versionControl)
+	versionControl := v.NewVersionControl(logger, timer.PrintElapsedTime, commitTypeManager)
+
+	return semantic.New(logger, repositoryRootPath, addFilesToUpgradeList(upgradePyFile, repositoryRootPath), repoVersionControl, filesVersionControl, versionControl, commitMessageManager, commitTypeManager)
 }

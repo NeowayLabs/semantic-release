@@ -7,10 +7,15 @@ import (
 	"errors"
 	"os"
 	"testing"
+	"time"
 
+	commitmessage "github.com/NeowayLabs/semantic-release/src/commit-message"
+	committype "github.com/NeowayLabs/semantic-release/src/commit-type"
 	"github.com/NeowayLabs/semantic-release/src/log"
 	"github.com/NeowayLabs/semantic-release/src/semantic"
 	"github.com/NeowayLabs/semantic-release/src/tests"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 type RepositoryVersionControlMock struct {
@@ -21,6 +26,8 @@ type RepositoryVersionControlMock struct {
 	currentVersion       string
 	currentChangesInfo   changesInfoMock
 	errUpgradeRemoteRepo error
+	commitHistory        []*object.Commit
+	commitHistoryDiff    []*object.Commit
 }
 
 func (r *RepositoryVersionControlMock) GetChangeHash() string {
@@ -33,7 +40,7 @@ func (r *RepositoryVersionControlMock) GetChangeAuthorEmail() string {
 	return r.authorEmail
 }
 func (r *RepositoryVersionControlMock) GetChangeMessage() string {
-	return r.message
+	return r.currentChangesInfo.message
 }
 func (r *RepositoryVersionControlMock) GetCurrentVersion() string {
 	return r.currentVersion
@@ -41,6 +48,14 @@ func (r *RepositoryVersionControlMock) GetCurrentVersion() string {
 
 func (r *RepositoryVersionControlMock) UpgradeRemoteRepository(newVersion string) error {
 	return r.errUpgradeRemoteRepo
+}
+
+func (r *RepositoryVersionControlMock) GetCommitHistory() []*object.Commit {
+	return r.commitHistory
+}
+
+func (r *RepositoryVersionControlMock) GetCommitHistoryDiff() []*object.Commit {
+	return r.commitHistoryDiff
 }
 
 type VersionControlMock struct {
@@ -93,7 +108,10 @@ func (f *fixture) NewSemantic() *semantic.Semantic {
 		errors.New("error while getting new log")
 	}
 
-	return semantic.New(logger, f.rootPath, f.filesToUpdateVariable, f.repoVersionMock, f.filesVersionMock, f.versionControlMock)
+	commitType := committype.New(logger)
+	commitMessageManager := commitmessage.New(logger, commitType)
+
+	return semantic.New(logger, f.rootPath, f.filesToUpdateVariable, f.repoVersionMock, f.filesVersionMock, f.versionControlMock, commitMessageManager, commitType)
 }
 
 type upgradeFilesMock struct {
@@ -116,12 +134,22 @@ type changesInfoMock struct {
 	changeType     string
 }
 
-func (f *fixture) GetValidChangesInfo() changesInfoMock {
+func (f *fixture) GetInvalidTypeMessageChangesInfo() changesInfoMock {
 	return changesInfoMock{
 		hash:           "39a757a0",
 		authorName:     "Admin",
 		authorEmail:    "admin@admin.com",
-		message:        "Any Message",
+		message:        "any(scope): Any Message",
+		currentVersion: "1.0.0",
+	}
+}
+
+func (f *fixture) GetValidMessageChangesInfo() changesInfoMock {
+	return changesInfoMock{
+		hash:           "39a757a0",
+		authorName:     "Admin",
+		authorEmail:    "admin@admin.com",
+		message:        "fix(scope): Any Message",
 		currentVersion: "1.0.0",
 	}
 }
@@ -136,6 +164,70 @@ func (f *fixture) GetValidUpgradeFilesInfo() upgradeFilesMock {
 	return upgradeFilesInfo
 }
 
+func (f *fixture) GetCommitHistoryWithWrongMessagesPattern() []*object.Commit {
+	var commitHistory []*object.Commit
+
+	author := object.Signature{
+		Name:  "John Doe",
+		Email: "john@doe.com",
+		When:  time.Now(),
+	}
+
+	commitHistory = append(commitHistory, &object.Commit{
+		Author:       author,
+		Hash:         plumbing.NewHash("anything"),
+		Committer:    author,
+		PGPSignature: "anything",
+		Message:      "This is a wrong commit message.",
+		TreeHash:     plumbing.NewHash("anything"),
+		ParentHashes: []plumbing.Hash{plumbing.NewHash("anything")},
+	})
+
+	commitHistory = append(commitHistory, &object.Commit{
+		Author:       author,
+		Hash:         plumbing.NewHash("anything"),
+		Committer:    author,
+		PGPSignature: "anything",
+		Message:      "Oh, no! Wrong again.",
+		TreeHash:     plumbing.NewHash("anything"),
+		ParentHashes: []plumbing.Hash{plumbing.NewHash("anything")},
+	})
+
+	return commitHistory
+}
+
+func (f *fixture) GetCommitHistoryWithRightMessagesPattern() []*object.Commit {
+	var commitHistory []*object.Commit
+
+	author := object.Signature{
+		Name:  "John Doe",
+		Email: "john@doe.com",
+		When:  time.Now(),
+	}
+
+	commitHistory = append(commitHistory, &object.Commit{
+		Author:       author,
+		Hash:         plumbing.NewHash("anything"),
+		Committer:    author,
+		PGPSignature: "anything",
+		Message:      "fix(scope): this is a fix correct commit message.",
+		TreeHash:     plumbing.NewHash("anything"),
+		ParentHashes: []plumbing.Hash{plumbing.NewHash("anything")},
+	})
+
+	commitHistory = append(commitHistory, &object.Commit{
+		Author:       author,
+		Hash:         plumbing.NewHash("anything"),
+		Committer:    author,
+		PGPSignature: "anything",
+		Message:      "feat(scope): this is a feature correct commit message.",
+		TreeHash:     plumbing.NewHash("anything"),
+		ParentHashes: []plumbing.Hash{plumbing.NewHash("anything")},
+	})
+
+	return commitHistory
+}
+
 func TestGenerateNewReleaseMustSkip(t *testing.T) {
 	f := setup()
 	f.versionControlMock.mustSkip = true
@@ -148,7 +240,7 @@ func TestGenerateNewReleaseMustSkip(t *testing.T) {
 
 func TestGenerateNewReleaseErrorGetNewVersion(t *testing.T) {
 	f := setup()
-	f.repoVersionMock.currentChangesInfo = f.GetValidChangesInfo()
+	f.repoVersionMock.currentChangesInfo = f.GetValidMessageChangesInfo()
 	f.versionControlMock.errGetNewVersion = errors.New("get new version error")
 
 	semanticService := f.NewSemantic()
@@ -160,7 +252,8 @@ func TestGenerateNewReleaseErrorGetNewVersion(t *testing.T) {
 
 func TestGenerateNewReleaseErrorUpgradeChangeLog(t *testing.T) {
 	f := setup()
-	f.repoVersionMock.currentChangesInfo = f.GetValidChangesInfo()
+	f.repoVersionMock.currentChangesInfo = f.GetValidMessageChangesInfo()
+
 	f.filesVersionMock.errUpgradeChangeLog = errors.New("upgrade changelog error")
 
 	semanticService := f.NewSemantic()
@@ -172,7 +265,7 @@ func TestGenerateNewReleaseErrorUpgradeChangeLog(t *testing.T) {
 
 func TestGenerateNewReleaseErrorUpgradeVariablesInFiles(t *testing.T) {
 	f := setup()
-	f.repoVersionMock.currentChangesInfo = f.GetValidChangesInfo()
+	f.repoVersionMock.currentChangesInfo = f.GetValidMessageChangesInfo()
 	f.filesVersionMock.errUpgradeVariableInFiles = errors.New("upgrade variables in files error")
 	f.filesToUpdateVariable = f.GetValidUpgradeFilesInfo()
 
@@ -185,7 +278,7 @@ func TestGenerateNewReleaseErrorUpgradeVariablesInFiles(t *testing.T) {
 
 func TestGenerateNewReleaseUpgradeRemoteRepositoryError(t *testing.T) {
 	f := setup()
-	f.repoVersionMock.currentChangesInfo = f.GetValidChangesInfo()
+	f.repoVersionMock.currentChangesInfo = f.GetValidMessageChangesInfo()
 	f.repoVersionMock.errUpgradeRemoteRepo = errors.New("upgrade remote repository error")
 	f.filesToUpdateVariable = f.GetValidUpgradeFilesInfo()
 
@@ -198,21 +291,39 @@ func TestGenerateNewReleaseUpgradeRemoteRepositoryError(t *testing.T) {
 
 func TestGenerateNewReleaseGetCommitChangeError(t *testing.T) {
 	f := setup()
-	f.repoVersionMock.currentChangesInfo = f.GetValidChangesInfo()
-	f.versionControlMock.errCommitChangeType = errors.New("invalid change type")
+	f.repoVersionMock.currentChangesInfo = f.GetInvalidTypeMessageChangesInfo()
+	f.versionControlMock.errCommitChangeType = errors.New("change type not found")
 
 	semanticService := f.NewSemantic()
 	actualErr := semanticService.GenerateNewRelease()
 	tests.AssertError(t, actualErr)
-	tests.AssertEqualValues(t, "error while getting commit change type due to: invalid change type", actualErr.Error())
+	tests.AssertEqualValues(t, "error while getting commit change type due to: change type not found", actualErr.Error())
 }
 
 func TestGenerateNewReleaseSuccess(t *testing.T) {
 	f := setup()
-	f.repoVersionMock.currentChangesInfo = f.GetValidChangesInfo()
+	f.repoVersionMock.currentChangesInfo = f.GetValidMessageChangesInfo()
 	f.filesToUpdateVariable = f.GetValidUpgradeFilesInfo()
 
 	semanticService := f.NewSemantic()
 	actualErr := semanticService.GenerateNewRelease()
+	tests.AssertNoError(t, actualErr)
+}
+
+func TestCommitLintError(t *testing.T) {
+	f := setup()
+	f.repoVersionMock.commitHistoryDiff = f.GetCommitHistoryWithWrongMessagesPattern()
+
+	semanticService := f.NewSemantic()
+	actualErr := semanticService.CommitLint()
+	tests.AssertError(t, actualErr)
+}
+
+func TestCommitLintSucess(t *testing.T) {
+	f := setup()
+	f.repoVersionMock.commitHistoryDiff = f.GetCommitHistoryWithRightMessagesPattern()
+
+	semanticService := f.NewSemantic()
+	actualErr := semanticService.CommitLint()
 	tests.AssertNoError(t, actualErr)
 }

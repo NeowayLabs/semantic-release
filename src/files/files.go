@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -13,7 +12,6 @@ import (
 const (
 	colorYellow = "\033[33m"
 	colorReset  = "\033[0m"
-	messageTag  = "message:"
 )
 
 var (
@@ -24,6 +22,10 @@ type Logger interface {
 	Info(s string, args ...interface{})
 	Error(s string, args ...interface{})
 	Warn(s string, args ...interface{})
+}
+
+type CommitMessageManager interface {
+	PrettifyCommitMessage(commitMessage string) (string, error)
 }
 
 type ElapsedTime func(functionName string) func()
@@ -49,13 +51,14 @@ type UpgradeFile struct {
 }
 
 type FileVersion struct {
-	log                Logger
-	elapsedTime        ElapsedTime
-	versionConrolHost  string
-	repositoryRootPath string
-	groupName          string
-	projectName        string
-	variableNameFound  bool
+	log                  Logger
+	elapsedTime          ElapsedTime
+	versionConrolHost    string
+	repositoryRootPath   string
+	groupName            string
+	projectName          string
+	variableNameFound    bool
+	commitMessageManager CommitMessageManager
 }
 
 func (f *FileVersion) openFile(filePath string) (*os.File, error) {
@@ -64,67 +67,6 @@ func (f *FileVersion) openFile(filePath string) (*os.File, error) {
 		return nil, fmt.Errorf("error while oppening file due to: %w", err)
 	}
 	return file, nil
-}
-
-func (f *FileVersion) findMessageTag(commitMessage string) bool {
-	return strings.Contains(strings.ToLower(commitMessage), messageTag)
-}
-
-func (f *FileVersion) getMessage(messageRow string) (string, error) {
-	startPosition := strings.Index(messageRow, messageTag) + len(messageTag)
-
-	if startPosition-1 == len(messageRow)-1 {
-		return "", errors.New("message not found")
-	}
-
-	message := strings.TrimSpace(messageRow[startPosition:])
-	if strings.ReplaceAll(message, " ", "") == "" {
-		return "", errors.New("message not found")
-	}
-
-	return message, nil
-}
-
-func (f *FileVersion) isMessageLongerThanLimit(message string) bool {
-	return len(message) >= 150
-}
-
-func (f *FileVersion) upperFirstLetterOfSentence(text string) string {
-	return fmt.Sprintf("%s%s", strings.ToUpper(text[:1]), text[1:])
-}
-
-// prettifyCommitMessage aims to keep a short message based on the commit message, removing extra information such as commit type.
-// Args:
-// 		commitMessage (string): Full commit message.
-// Returns:
-// 		string: Returns a commit message with limmited number of characters.
-// 		err: Error whenever unexpected issues happen.
-func (f *FileVersion) prettifyCommitMessage(commitMessage string) (string, error) {
-
-	var message string
-	splitedMessage := strings.Split(commitMessage, "\n")
-
-	for _, row := range splitedMessage {
-		row := strings.ToLower(row)
-		if f.findMessageTag(row) {
-
-			currentMessage, err := f.getMessage(row)
-			if err != nil {
-				return "", fmt.Errorf("error while getting message due to: %w", err)
-			}
-			message = currentMessage
-		}
-	}
-
-	if message == "" {
-		return "", errors.New("commit message has no tag 'message:'")
-	}
-
-	if f.isMessageLongerThanLimit(message) {
-		message = fmt.Sprintf("%s...", message[:150])
-	}
-
-	return f.upperFirstLetterOfSentence(message), nil
 }
 
 func (f *FileVersion) containsVariableNameInText(text, variableName, copySignal string) bool {
@@ -156,7 +98,7 @@ func (f *FileVersion) unmarshalUpgradeFiles(filesToUpgrade interface{}) (*Upgrad
 func (f *FileVersion) writeFile(destinationPath, originPath string, content []byte) error {
 	destination := f.setDefaultPath(destinationPath, originPath)
 
-	if err := ioutil.WriteFile(destination, content, 0666); err != nil {
+	if err := os.WriteFile(destination, content, 0666); err != nil {
 		return fmt.Errorf("error while writing file %s due to: %w", destination, err)
 	}
 
@@ -195,8 +137,9 @@ func (f *FileVersion) getFileOutputContent(scanner *bufio.Scanner, file UpgradeF
 // It will update the files row containing a given variable name.
 // I.e.:
 // err := UpgradeVariableInFiles(UpgradeFiles{Files: []UpgradeFile{{Path: "./setup.py", DestinationPath: "", VariableName: "__version__"}}), "1.0.1")
-//  	From: __version__ = 1.0.0
-//  	To:   __version__ = 1.0.1
+//
+//	From: __version__ = 1.0.0
+//	To:   __version__ = 1.0.1
 func (f *FileVersion) UpgradeVariableInFiles(filesToUpgrade interface{}, newVersion string) error {
 	defer f.elapsedTime("UpgradeVariableInFiles")()
 
@@ -294,7 +237,7 @@ func (f *FileVersion) unmarshalChangesInfo(changes interface{}) (*ChangesInfo, e
 }
 
 func (f *FileVersion) formatChangeLogContent(changes *ChangesInfo) (string, error) {
-	commitMessage, err := f.prettifyCommitMessage(changes.Message)
+	commitMessage, err := f.commitMessageManager.PrettifyCommitMessage(changes.Message)
 	if err != nil {
 		return "", fmt.Errorf("prettify commit message error: %w", err)
 	}
@@ -359,13 +302,14 @@ func (f *FileVersion) UpgradeChangeLog(path, destinationPath string, chageLogInf
 	return nil
 }
 
-func New(log Logger, elapsedTime ElapsedTime, versionConrolHost, repositoryRootPath, groupName, projectName string) *FileVersion {
+func New(log Logger, elapsedTime ElapsedTime, versionConrolHost, repositoryRootPath, groupName, projectName string, commitMessageManager CommitMessageManager) *FileVersion {
 	return &FileVersion{
-		log:                log,
-		elapsedTime:        elapsedTime,
-		versionConrolHost:  versionConrolHost,
-		repositoryRootPath: repositoryRootPath,
-		groupName:          groupName,
-		projectName:        projectName,
+		log:                  log,
+		elapsedTime:          elapsedTime,
+		versionConrolHost:    versionConrolHost,
+		repositoryRootPath:   repositoryRootPath,
+		groupName:            groupName,
+		projectName:          projectName,
+		commitMessageManager: commitMessageManager,
 	}
 }

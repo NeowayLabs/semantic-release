@@ -40,14 +40,15 @@ stages:
 
 semantic-release:
     stage: semantic-release
-    only:
-        refs:
-            - master
-    before_script: 
-        - docker pull registry.com/dataplatform/semantic-release:latest
+    variables:
+        SEMANTIC_RELEASE_VERSION: latest
+    dependencies: []
+    except:
+        - master
+    before_script:
+        - docker pull registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION
     script:
-        - docker run registry.com/dataplatform/semantic-release:latest up -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
-
+        - docker run registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION up -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
 ```
 
 If your project is a Python project you can add the flag `-setup-py true` to update the release version in this file too.
@@ -77,6 +78,73 @@ setup(
 )
 ```
 
+ ### Adding pre-commit message CLI
+
+The `pre-commit` will validate your commit messages before the commit being accepted.
+That will prevent you from having to rebase your commit history to adapt your commit messages to [semantic-release](https://github.com/NeowayLabs/semantic-release) standards.
+
+**Requirements**
+- [Golang installation](https://go.dev/doc/install)
+
+
+Clone pre-commit project and install it in you SO.
+
+```
+git clone git@github.com:NeowayLabs/pre-commit.git
+```
+
+```
+make install
+```
+
+**How to use it?**
+
+After adding new changes with the `git add` command, you can run `commit .` on any git project root path and follow CLI steps.
+
+```
+commit .
+```
+
+ ### How to use `rebase` to rename commit message?
+
+If the [commit lint ci step](#how-to-add-commit-lint-stage-to-gitlab) fail, you can rebase you commit history and fix the wrong commit messages.
+
+With your local repository up to date with your remote branch, run the following command.
+Note: `N` is the number of commits you pushed to your branch.
+
+```
+git rebase -i HEAD~N
+```
+
+Edit the document and replace the first word `pick` to `r` or `reword`. Save it with `ctrl+o` and close it with `ctrl+x`;
+
+Force push it with `-f` tag as follows:
+
+```
+git push -f origin my-branch-name
+```
+
+ ### How to add commit lint stage to Gitlab?
+
+ You must add a new stage to `gitlab-ci.yml` file adding two new arguments to semantic-release script.
+ - `-commit-lint=true` to run commit-lint logic;
+ - `-branch-name=${CI_COMMIT_REF_NAME}` so that semantic-release can validate only the commits of the referenced branch.
+
+```yaml
+stages:
+  - commit-lint
+
+commit-lint:
+    stage: commit-int
+    variables:
+        SEMANTIC_RELEASE_VERSION: latest
+    dependencies: []
+    before_script:
+        - docker pull registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION
+    script:
+        - docker run registry.com/dataplatform/semantic-release:$SEMANTIC_RELEASE_VERSION up -commit-lint=true -branch-name=${CI_COMMIT_REF_NAME} -git-host ${CI_SERVER_HOST} -git-group ${CI_PROJECT_NAMESPACE} -git-project ${CI_PROJECT_NAME} -username ${PPD2_USERNAME} -password ${PPD2_ACCESS_TOKEN}
+```
+
  ### If you need more information about the semantic release CLI usage you can run the following command.
 
 ```
@@ -93,21 +161,28 @@ So the semantic release can find out the commit type to define the upgrade type 
 
 
 ```
-type: [type here].
-message: Commit message here.
+type(scope?): Commit message here.
 ```
 
 I.e.
 ```
-type: [feat]
-message: Added new function to print the Fibonacci sequece.
+feat(fibonacci): Added new function to print the Fibonacci sequece.
 ```
 
-### If you want to complete a Merge Request without triggering the versioning process then you can use one of the skip type tags as follows.
+The scope is optional, so you can also use the fllowing message standard.
 
-- type: [skip]
-- type: [skip v]
-- type: [skip versioning]
+```
+type: Commit message here.
+```
+
+I.e.
+```
+feat: Added new function to print the Fibonacci sequece.
+```
+
+### If you want to complete a Merge Request without triggering the versioning process then you can use the skip type tags as follows.
+
+- skip
 
 ## Adding new tests
 
