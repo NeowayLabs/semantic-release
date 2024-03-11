@@ -1,3 +1,10 @@
+v2.0.1:
+ - Fix IsValidMessage method to skip commit lint when the message is a merge from master to a developer branch. (@esequiel.virtuoso)
+ - Add chore option. (@esequiel.virtuoso)
+
+v2.0.0:
+ - Change semantic-release message pattern to 'type(scope?): message here'. (@esequiel.virtuoso)
+
 v1.0.5
  - Fix isSetNewVersion function logic (@esequiel.virtuoso)
 

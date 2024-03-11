@@ -15,7 +15,7 @@ type CommitType struct {
 }
 
 func (c *CommitType) GetAll() []string {
-	return []string{"build", "ci", "docs", "fix", "feat", "feature", "feature", "perf", "performance", "refactor", "style", "test", "bc", "breaking", "breaking change", "skip"}
+	return []string{"build", "ci", "docs", "fix", "feat", "feature", "feature", "perf", "performance", "refactor", "style", "test", "bc", "breaking", "breaking change", "chore", "skip"}
 }
 
 func (c *CommitType) GetMajorUpgrade() []string {
@@ -31,7 +31,7 @@ func (c *CommitType) GetPatchUpgrade() []string {
 }
 
 func (c *CommitType) GetSkipVersioning() []string {
-	return []string{"skip"}
+	return []string{"skip", "chore"}
 }
 
 func (c *CommitType) isValidCommitType(commitTypeScope string) bool {

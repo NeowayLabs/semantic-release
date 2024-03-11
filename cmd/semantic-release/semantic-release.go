@@ -183,6 +183,7 @@ func printCommitTypes() {
 	fmt.Println(colorYellow + "\t*         [refactor]" + colorReset + ": A code change that neither fixes a bug nor adds a feature")
 	fmt.Println(colorYellow + "\t*            [style]" + colorReset + ": Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)")
 	fmt.Println(colorYellow + "\t*             [test]" + colorReset + ": Adding missing tests or correcting existing tests")
+	fmt.Println(colorYellow + "\t*            [chore]" + colorReset + ": No production code change. It won't release a new version.")
 	fmt.Println(colorYellow + "\t*             [skip]" + colorReset + ": Skip versioning")
 	fmt.Println(colorYellow + "\t*               [bc]" + colorReset + ": Changes that will require other changes in dependant applications")
 	fmt.Println(colorYellow + "\t*         [breaking]" + colorReset + ": ||")
