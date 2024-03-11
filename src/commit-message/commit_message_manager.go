@@ -75,7 +75,22 @@ func (f *CommitMessage) PrettifyCommitMessage(commitMessage string) (string, err
 	return f.upperFirstLetterOfSentence(message), nil
 }
 
+func isMergeMasterBranch(message string) bool {
+	splitedMessage := strings.Split(strings.ToLower(message), "\n")
+
+	for _, row := range splitedMessage {
+		if strings.Contains(row, "'origin/master' into") {
+			return true
+		}
+	}
+	return false
+}
+
 func (f *CommitMessage) IsValidMessage(message string) bool {
+	if isMergeMasterBranch(message) {
+		return true
+	}
+
 	index := strings.Index(message, ":")
 
 	if f.commitType.IndexNotFound(index) {

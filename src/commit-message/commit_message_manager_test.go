@@ -94,3 +94,10 @@ func TestIsValidMessageFalse(t *testing.T) {
 	actual = f.commitMessageManager.IsValidMessage(message)
 	tests.AssertFalse(t, actual)
 }
+
+func TestIsValidMessageMergeMasterBranchSuccess(t *testing.T) {
+	f := setup(t)
+	message := "first message row \n Merge remote-tracking branch 'origin/master' into something \n last message row"
+	actual := f.commitMessageManager.IsValidMessage(message)
+	tests.AssertTrue(t, actual)
+}
