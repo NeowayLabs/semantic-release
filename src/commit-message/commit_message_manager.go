@@ -75,7 +75,7 @@ func (f *CommitMessage) PrettifyCommitMessage(commitMessage string) (string, err
 	return f.upperFirstLetterOfSentence(message), nil
 }
 
-func isMergeMasterBranch(message string) bool {
+func isMergeMasterToBranch(message string) bool {
 	splitedMessage := strings.Split(strings.ToLower(message), "\n")
 
 	for _, row := range splitedMessage {
@@ -87,7 +87,7 @@ func isMergeMasterBranch(message string) bool {
 }
 
 func (f *CommitMessage) IsValidMessage(message string) bool {
-	if isMergeMasterBranch(message) {
+	if isMergeMasterToBranch(message) {
 		return true
 	}
 
