@@ -27,7 +27,7 @@ func setup(t *testing.T) *fixture {
 
 func TestGetAll(t *testing.T) {
 	f := setup(t)
-	expected := []string{"build", "ci", "docs", "fix", "feat", "feature", "feature", "perf", "performance", "refactor", "style", "test", "bc", "breaking", "breaking change", "skip"}
+	expected := []string{"build", "ci", "docs", "fix", "feat", "feature", "feature", "perf", "performance", "refactor", "style", "test", "bc", "breaking", "breaking change", "chore", "skip"}
 	actual := f.commitType.GetAll()
 
 	tests.AssertDeepEqualValues(t, expected, actual)
@@ -59,7 +59,7 @@ func TestGetPatchUpgrade(t *testing.T) {
 
 func TestGetSkipVersioning(t *testing.T) {
 	f := setup(t)
-	expected := []string{"skip"}
+	expected := []string{"skip", "chore"}
 	actual := f.commitType.GetSkipVersioning()
 
 	tests.AssertDeepEqualValues(t, expected, actual)
