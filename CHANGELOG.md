@@ -1,3 +1,6 @@
+v2.0.2:
+ - Fix IsValidMessage method adding a new exception for merge from master to the branch (@esequiel.virtuoso)
+
 v2.0.1:
  - Fix IsValidMessage method to skip commit lint when the message is a merge from master to a developer branch. (@esequiel.virtuoso)
  - Add chore option. (@esequiel.virtuoso)
