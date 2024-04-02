@@ -80,7 +80,12 @@ func isMergeMasterToBranch(message string) bool {
 
 	for _, row := range splitedMessage {
 		lowerRow := strings.ToLower(row)
-		if strings.Contains(lowerRow, "'origin/master' into") || strings.Contains(lowerRow, "merge branch 'master' into") || strings.Contains(lowerRow, "merge branch 'master' of") {
+		if strings.Contains(lowerRow, "'origin/master' into") ||
+			strings.Contains(lowerRow, "merge branch 'master' into") ||
+			strings.Contains(lowerRow, "merge branch 'master' of") ||
+			strings.Contains(lowerRow, "'origin/main' into") ||
+			strings.Contains(lowerRow, "merge branch 'main' into") ||
+			strings.Contains(lowerRow, "merge branch 'main' of") {
 			return true
 		}
 	}
