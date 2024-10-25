@@ -59,6 +59,10 @@ func TestIsValidMessageSuccess(t *testing.T) {
 	actual := f.commitMessageManager.IsValidMessage(message)
 	tests.AssertTrue(t, actual)
 
+	message = "Merge branches 'sample-branch' and 'master' of ssh://gitlab.lalala/j/dv into sample-branch"
+	actual = f.commitMessageManager.IsValidMessage(message)
+	tests.AssertTrue(t, actual)
+
 	message = "feat(scope): This is a message"
 	actual = f.commitMessageManager.IsValidMessage(message)
 	tests.AssertTrue(t, actual)

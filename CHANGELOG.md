@@ -1,4 +1,7 @@
 v2.0.3:
+ - Added a new commit message to be validated for merge from master to the branch (@artus.andermann)
+
+v2.0.3:
  - Fix IsValidMessage method adding a new exception for merge from master to the branch (@esequiel.virtuoso)
 
 v2.0.2:
