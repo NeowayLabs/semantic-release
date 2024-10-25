@@ -3,6 +3,7 @@ package commitmessage
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -78,17 +79,34 @@ func (f *CommitMessage) PrettifyCommitMessage(commitMessage string) (string, err
 func isMergeMasterToBranch(message string) bool {
 	splitedMessage := strings.Split(strings.ToLower(message), "\n")
 
+	mergePatterns := []string{
+		"'origin/master' into",
+		"merge branches 'master' into",
+		"merge branch 'master' into",
+		"merge branch 'master' of",
+		"'origin/main' into",
+		"merge branch 'main' into",
+		"merge branch 'main' of",
+	}
+
+	mergeRegexPattern := `merge branches '.*' and 'master' of`
+	re := regexp.MustCompile(mergeRegexPattern)
+
 	for _, row := range splitedMessage {
 		lowerRow := strings.ToLower(row)
-		if strings.Contains(lowerRow, "'origin/master' into") ||
-			strings.Contains(lowerRow, "merge branch 'master' into") ||
-			strings.Contains(lowerRow, "merge branch 'master' of") ||
-			strings.Contains(lowerRow, "'origin/main' into") ||
-			strings.Contains(lowerRow, "merge branch 'main' into") ||
-			strings.Contains(lowerRow, "merge branch 'main' of") {
+
+		found := re.MatchString(lowerRow)
+		if found {
 			return true
 		}
+
+		for _, pattern := range mergePatterns {
+			if strings.Contains(lowerRow, pattern) {
+				return true
+			}
+		}
 	}
+
 	return false
 }
 
