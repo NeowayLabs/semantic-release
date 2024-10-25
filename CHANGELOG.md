@@ -1,4 +1,4 @@
-v2.0.3:
+v2.0.4:
  - Added a new commit message to be validated for merge from master to the branch (@artus.andermann)
 
 v2.0.3:
